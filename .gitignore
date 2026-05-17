@@ -1,0 +1,16 @@
+# Build output
+/bin/
+/dist/
+
+# Coverage
+coverage.txt
+coverage.out
+*.cover
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
