@@ -1,6 +1,7 @@
 package datamodel
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -40,6 +41,37 @@ var (
 	ErrSubspaceIDLength    = errors.New("datamodel: subspace id length mismatch")
 	ErrPayloadDigestLength = errors.New("datamodel: payload digest length mismatch")
 )
+
+// IsNewerThan reports whether e is strictly newer than other per the Willow
+// data model tie-break order: timestamp first, then payload_digest lexicograpic,
+// then payload_length. Used by prefix-pruning to decide which of two competing
+// entries wins.
+func (e Entry) IsNewerThan(other Entry) bool {
+	if e.Timestamp != other.Timestamp {
+		return e.Timestamp > other.Timestamp
+	}
+	if c := bytes.Compare(e.PayloadDigest, other.PayloadDigest); c != 0 {
+		return c > 0
+	}
+	return e.PayloadLength > other.PayloadLength
+}
+
+// Prunes reports whether e prefix-prunes other per
+// https://willowprotocol.org/specs/data-model/index.html#prefix_pruning:
+// same namespace, same subspace, e.Path is a prefix of other.Path (or equal),
+// and e is strictly newer than other.
+func (e Entry) Prunes(other Entry) bool {
+	if !bytes.Equal(e.NamespaceID, other.NamespaceID) {
+		return false
+	}
+	if !bytes.Equal(e.SubspaceID, other.SubspaceID) {
+		return false
+	}
+	if !e.Path.IsPrefixOf(other.Path) {
+		return false
+	}
+	return e.IsNewerThan(other)
+}
 
 // Encode returns the canonical encoding of e per
 // https://willowprotocol.org/specs/encodings/index.html#enc_entry.
