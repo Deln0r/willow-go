@@ -119,7 +119,11 @@ func (p Path) LongestCommonPrefix(other Path) Path {
 	return Path{components: p.components[:shared], limits: p.limits}
 }
 
+// IsEmpty reports whether p has zero components.
+func (p Path) IsEmpty() bool { return len(p.components) == 0 }
+
 // IsPrefixOf reports whether p is a prefix of other (component-wise).
+// A path is a prefix of itself; the empty path is a prefix of every path.
 func (p Path) IsPrefixOf(other Path) bool {
 	if len(p.components) > len(other.components) {
 		return false
@@ -130,6 +134,94 @@ func (p Path) IsPrefixOf(other Path) bool {
 		}
 	}
 	return true
+}
+
+// IsPrefixedBy reports whether other is a prefix of p (inverse of IsPrefixOf).
+func (p Path) IsPrefixedBy(other Path) bool { return other.IsPrefixOf(p) }
+
+// IsRelatedTo reports whether either of p, other is a prefix of the other.
+// Equivalent to "they share a common prefix that equals the shorter one."
+func (p Path) IsRelatedTo(other Path) bool {
+	return p.IsPrefixOf(other) || other.IsPrefixOf(p)
+}
+
+// LeastUpperBound returns the longer of two related paths and true. If p and
+// other are not related (neither is a prefix of the other), returns the zero
+// Path and false.
+func (p Path) LeastUpperBound(other Path) (Path, bool) {
+	if p.IsPrefixOf(other) {
+		return other, true
+	}
+	if other.IsPrefixOf(p) {
+		return p, true
+	}
+	return Path{}, false
+}
+
+// GreaterButNotPrefixed returns the least Path strictly greater than p in
+// lex order that is NOT prefixed by p (in the path-prefix sense, i.e., does
+// not extend p as a child). Returns (zero, false) if no such path fits within
+// p's limits.
+//
+// Algorithm (from willow_rs paths/mod.rs): scan components right-to-left. For
+// each component at index i, try two transformations in order:
+//
+//  1. Append a single 0x00 byte to component i (dropping components after i),
+//     provided len(component[i]) < MCL and prefix_length_through_i < MPL. The
+//     result is lex-greater than p and shares only the first i components
+//     with p, so p is not a path-prefix of it.
+//
+//  2. Find the rightmost byte in component[i] that is < 0xFF. Truncate
+//     component[i] to that byte's position+1 and increment that byte by 1,
+//     dropping all components after i.
+//
+// If neither transformation succeeds for any component, returns false.
+func (p Path) GreaterButNotPrefixed() (Path, bool) {
+	prefixLen := 0
+	// Precompute cumulative byte lengths so we can probe "prefix_length_through_i".
+	cumLen := make([]int, len(p.components)+1)
+	for i, c := range p.components {
+		cumLen[i+1] = cumLen[i] + len(c)
+	}
+
+	for i := len(p.components) - 1; i >= 0; i-- {
+		comp := p.components[i]
+		prefixLen = cumLen[i+1] // bytes through and including component i
+
+		// Branch 1: append 0x00 to component i.
+		if len(comp) < p.limits.MaxComponentLength && prefixLen < p.limits.MaxPathLength {
+			extended := make([]byte, len(comp)+1)
+			copy(extended, comp)
+			// extended[len(comp)] = 0 by default
+			newComps := make([][]byte, i+1)
+			for j := 0; j < i; j++ {
+				newComps[j] = cloneBytes(p.components[j])
+			}
+			newComps[i] = extended
+			return Path{components: newComps, limits: p.limits}, true
+		}
+
+		// Branch 2: find rightmost byte < 0xFF in comp and increment it.
+		incrementAt := -1
+		for j := len(comp) - 1; j >= 0; j-- {
+			if comp[j] < 0xFF {
+				incrementAt = j
+				break
+			}
+		}
+		if incrementAt >= 0 {
+			truncated := make([]byte, incrementAt+1)
+			copy(truncated, comp[:incrementAt+1])
+			truncated[incrementAt]++
+			newComps := make([][]byte, i+1)
+			for j := 0; j < i; j++ {
+				newComps[j] = cloneBytes(p.components[j])
+			}
+			newComps[i] = truncated
+			return Path{components: newComps, limits: p.limits}, true
+		}
+	}
+	return Path{}, false
 }
 
 // Compare returns -1, 0, or +1 comparing p to other lexicographically by

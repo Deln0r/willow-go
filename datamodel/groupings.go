@@ -112,6 +112,15 @@ func NewSubspaceRangeOpen(start []byte) SubspaceRange {
 	return SubspaceRange{Start: cloneBytes(start), Open: true}
 }
 
+// SingletonSubspaceRange returns the half-open range [s, s+0x00) which
+// contains exactly s. Used by Area.AsRange3d to express a subspace-specific
+// Area as a Range3d.
+func SingletonSubspaceRange(s []byte) SubspaceRange {
+	end := make([]byte, len(s)+1)
+	copy(end, s)
+	return SubspaceRange{Start: cloneBytes(s), End: end}
+}
+
 // FullSubspaceRange returns the SubspaceRange containing every subspace.
 func FullSubspaceRange() SubspaceRange { return SubspaceRange{Open: true} }
 
