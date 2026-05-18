@@ -7,7 +7,7 @@ Thanks for considering a contribution. This project is at a pre-MVP stage and th
 willow-go ports a subset of the Willow specifications to Go:
 
 - **In scope:** data model (paths, entries, ranges, areas, store), Meadowcap capability layer, the Willow'25 parameter bundle, mobile bindings (gomobile), pure-Go testing infrastructure.
-- **Out of scope until Phase 2 (NLnet-funded):** WGPS sync, persistent stores, transport encryption, owned-namespace capabilities, read-side ACL enforcement. PRs that try to start any of these will be politely closed — they are reserved for the funded work to preserve the grant narrative.
+- **Out of scope until Phase 2 (planned future work):** WGPS sync, persistent stores, transport encryption, owned-namespace capabilities, read-side ACL enforcement. PRs that try to start any of these will be politely closed — they are reserved for a future dedicated development phase, and partial implementations would create maintenance debt.
 - **Out of scope permanently:** features outside the Willow protocol family.
 
 If you are unsure whether something is in scope, open an issue first.

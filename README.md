@@ -20,13 +20,13 @@ The [Rust reference implementation](https://codeberg.org/worm-blossom/willow_rs)
 | Native iOS / Android bindings | requires cgo + cross-compile dance | `gomobile bind` produces an XCFramework / AAR |
 | Go ecosystem (Matrix, NATS, gRPC, …) | needs FFI bridge | drop-in import |
 | Container-friendly static binaries | needs musl + cross-compile | `go build` |
-| WGPS sync protocol | YES (production) | Phase 2 — funded by NLnet grant work |
+| WGPS sync protocol | YES (production) | Phase 2 — planned, see roadmap |
 
 If you need WGPS sync today, use willow_rs. If you need Willow on a phone or in a Go service, this is the project.
 
 ## Status
 
-Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference. WGPS sync is the explicit next phase and is the subject of an NLnet grant application.
+Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference. WGPS sync is the explicit next phase — see the roadmap below.
 
 53 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip. 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 121 tests across 7 packages.
 
@@ -80,7 +80,7 @@ func main() {
 | Mobile | gomobile-bindable API: PathBuilder, EntryBuilder, HashPayload | [`mobile/`](mobile/) |
 | Tooling | Cross-impl smoketest CLI, end-to-end sync demo CLI | [`cmd/`](cmd/) |
 
-Not yet implemented (tracked under "Phase 2" in the [NLnet grant scope](#phase-2-roadmap-nlnet-funded)): WGPS sync, persistent store, transport encryption, owned-namespace capabilities, read capabilities. Tracked items: `docs eb-1/willow-go/TECH_DEBT.md` in the maintainer's private notes.
+Not yet implemented (see [roadmap](#phase-2-roadmap) below): WGPS sync, persistent store, transport encryption, owned-namespace capabilities, read capabilities.
 
 ## Cross-implementation validation
 
@@ -168,9 +168,9 @@ bob recv: read=3 accepted=3 rejected=0 store_len=3
 
 This is NOT WGPS (no set reconciliation, no fingerprint trees, no channel multiplexing) — that is Phase 2. This is the minimum viable proof that the data-model + capability layers compose correctly on a duplex transport.
 
-## Phase 2 roadmap (NLnet-funded)
+## Phase 2 roadmap
 
-Submitted for [NLnet NGI0](https://nlnet.nl/core) funding under the implementation-diversity precedent set by [Vula](https://nlnet.nl/project/Vula/) (Go-language post-quantum encryption) and [WillowSync](https://nlnet.nl/project/WillowSync/) (the original Rust impl). Scope:
+Planned scope, in rough priority order:
 
 1. WGPS sync protocol — set reconciliation with cumulative hash fingerprints, LCMUX channel multiplexing, PIO private interest overlap.
 2. Persistent store backend on top of `modernc.org/sqlite` (pure Go, no cgo).
@@ -178,7 +178,7 @@ Submitted for [NLnet NGI0](https://nlnet.nl/core) funding under the implementati
 4. `Area`-encoded WGPS message framing.
 5. Polished error handling + fuzz harness + benchmarks.
 
-ETA: 6-9 months post-grant approval.
+Timeline depends on dedicated funding. If you are interested in sponsoring or contributing to this work, please open an issue.
 
 ## Architecture
 
