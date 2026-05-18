@@ -35,12 +35,16 @@ func NewAuthorisationToken(
 }
 
 // Verify reports whether t authorises the given entry: the capability must
-// include the entry AND t.Signature must be a valid Ed25519 signature by
-// the capability's receiver over the entry's canonical encoding.
+// be valid (delegation chain checks out), must include the entry, AND
+// t.Signature must be a valid Ed25519 signature by the capability's
+// effective receiver over the entry's canonical encoding.
 //
-// Returns nil on success, ErrCapabilityRejectsEntry if the capability does
-// not include the entry, or ErrInvalidSignature on signature failure.
+// Returns nil on success; otherwise ErrCapabilityRejectsEntry,
+// ErrInvalidSignature, or ErrDelegationSignature as appropriate.
 func (t AuthorisationToken) Verify(entry datamodel.Entry) error {
+	if !t.Capability.IsValid() {
+		return ErrDelegationSignature
+	}
 	if !t.Capability.IncludesEntry(entry) {
 		return ErrCapabilityRejectsEntry
 	}

@@ -50,21 +50,35 @@ var (
 	ErrInvalidUserKey         = errors.New("meadowcap: user key wrong length")
 )
 
-// CommunalCapability is the simplest Meadowcap capability: a single receiver
-// (user_key) granted access to a single subspace within a namespace. Both
-// the namespace key and the user key are Ed25519 public keys (32 bytes
-// each), matching the willow25 specialisation.
+// CommunalCapability is a Meadowcap capability rooted in a communal genesis.
+// A communal genesis binds a user_key to a subspace within a namespace; the
+// granted area at that point is SubspaceArea(user_key). Subsequent
+// Delegations narrow the granted area and hand control to a new user.
 //
-// This pre-MVP version does NOT support delegation. The granted area is
-// always the full subspace area belonging to the user_key.
+// The "receiver" of the cap is the genesis user_key if Delegations is empty,
+// otherwise the final delegation's NewUserKey. All keys are Ed25519 public
+// keys (32 bytes), matching willow25.
 type CommunalCapability struct {
 	Mode         AccessMode
 	NamespaceKey ed25519.PublicKey
 	UserKey      ed25519.PublicKey
+	Delegations  []Delegation
 }
 
-// NewCommunal returns a new communal capability. Returns an error if either
-// key has the wrong length for Ed25519.
+// Delegation is a single step in a Meadowcap delegation chain: the previous
+// receiver signs over (Area, NewUserKey) using their private key,
+// authorising NewUserKey to receive caps within Area. Validation walks the
+// chain and verifies each signature against the appropriate previous
+// receiver's key, plus checks that each Area is included in the previous
+// step's Area.
+type Delegation struct {
+	Area       datamodel.Area
+	NewUserKey ed25519.PublicKey
+	Signature  []byte // 64-byte Ed25519 signature over the delegation handover bytes
+}
+
+// NewCommunal returns a new communal capability with no delegations.
+// Returns an error if either key has the wrong length for Ed25519.
 func NewCommunal(mode AccessMode, namespaceKey, userKey ed25519.PublicKey) (CommunalCapability, error) {
 	if len(namespaceKey) != ed25519.PublicKeySize {
 		return CommunalCapability{}, ErrInvalidNamespaceKey
@@ -79,25 +93,39 @@ func NewCommunal(mode AccessMode, namespaceKey, userKey ed25519.PublicKey) (Comm
 	}, nil
 }
 
-// Receiver returns the public key of the capability's receiver — the entity
-// authorised to sign entries under this cap. With no delegations the
-// receiver equals the user_key.
-func (c CommunalCapability) Receiver() ed25519.PublicKey { return c.UserKey }
+// Receiver returns the public key of the capability's effective receiver —
+// the entity authorised to sign entries under this cap. With no delegations
+// this equals GenesisUserKey; with delegations it is the most recent
+// NewUserKey.
+func (c CommunalCapability) Receiver() ed25519.PublicKey {
+	if n := len(c.Delegations); n > 0 {
+		return c.Delegations[n-1].NewUserKey
+	}
+	return c.UserKey
+}
 
-// GrantedArea returns the area within which this capability grants access:
-// the full subspace area belonging to the user_key.
+// GrantedArea returns the area within which this capability currently
+// grants access. With no delegations: the full subspace area belonging to
+// the genesis user_key. With delegations: the area of the most recent
+// delegation.
 func (c CommunalCapability) GrantedArea(limits datamodel.Limits) datamodel.Area {
+	if n := len(c.Delegations); n > 0 {
+		return c.Delegations[n-1].Area
+	}
 	return datamodel.SubspaceArea(limits, c.UserKey)
 }
 
 // IncludesEntry reports whether c grants access to the given entry: the
 // entry's namespace must match the capability's namespace, and the entry's
-// subspace must equal the capability's receiver.
+// coordinate (subspace, path, timestamp) must fall within the currently
+// granted area.
 func (c CommunalCapability) IncludesEntry(e datamodel.Entry) bool {
 	if !bytesEqual(e.NamespaceID, c.NamespaceKey) {
 		return false
 	}
-	return bytesEqual(e.SubspaceID, c.UserKey)
+	limits := e.Path.Limits()
+	area := c.GrantedArea(limits)
+	return area.IncludesEntry(e)
 }
 
 func bytesEqual(a, b []byte) bool {
