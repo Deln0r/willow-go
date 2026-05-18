@@ -1,8 +1,12 @@
-.PHONY: test smoketest mobile-ios mobile-android mobile-clean
+.PHONY: test bench smoketest mobile-ios mobile-android mobile-clean
 
 # Run all Go unit tests.
 test:
 	go test ./...
+
+# Run all microbenchmarks (see BENCHMARKS.md).
+bench:
+	go test -bench=. -benchmem -run=^$$ ./datamodel/ ./willow25/
 
 # Run the cross-impl byte-compat acceptance gate.
 smoketest:
