@@ -11,7 +11,7 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 [![Byte-compat vs willow_rs](https://img.shields.io/badge/byte--compat-53%2F53%20fixtures-success)]()
 [![Mobile](https://img.shields.io/badge/mobile-iOS%20%2B%20gomobile-success)]()
 
-> Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with iOS and Android bindings via gomobile and zero cgo.
+> Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with mobile bindings via gomobile (iOS verified end-to-end; Android target builds but is not yet validated on a host with a JDK) and zero cgo.
 
 ## How to read this
 
@@ -37,7 +37,8 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Meadowcap owned / read capabilities | Phase 2 | — | — |
 | WILLIAM3 payload digest | Stable | 11 cross-impl digest fixtures match bab_rs | [`willow25/william3.go`](willow25/william3.go) |
 | Willow'25 parameter bundle | Stable | 4096/4096/4096 limits, 32-byte ids | [`willow25/willow25.go`](willow25/willow25.go) |
-| Mobile (iOS + Android bindings) | Stable (iOS verified) | XCFramework built on Xcode 26.5 / iOS SDK 26.5 | [`mobile/`](mobile/) |
+| Mobile bindings — iOS | Stable | XCFramework built and inspected on Xcode 26.5 / iOS SDK 26.5 | [`mobile/`](mobile/) |
+| Mobile bindings — Android | Partial | `gomobile bind -target=android` target wired in the Makefile; not yet built end-to-end on a host with a JDK + Android NDK (the underlying mobile package compiles cleanly) | [`mobile/`](mobile/) |
 | WGPS sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
@@ -168,7 +169,9 @@ cargo run --bin gen-william3
 cargo run --bin gen-handover
 ```
 
-## Mobile (iOS and Android)
+## Mobile (iOS verified, Android target wired)
+
+The `mobile/` package exposes a gomobile-bindable surface (builder types, no `[]byte` slice arguments) so the underlying datamodel can be called from Swift / Objective-C / Java / Kotlin without writing FFI by hand.
 
 ```sh
 # Install the gomobile toolchain (one-off):
@@ -176,9 +179,12 @@ go install golang.org/x/mobile/cmd/gomobile@latest
 go install golang.org/x/mobile/cmd/gobind@latest
 gomobile init
 
-# Build:
-make mobile-ios       # produces Mobile.xcframework (verified on Xcode 26.5)
-make mobile-android   # produces mobile.aar (requires Android NDK and a JDK)
+# iOS — verified end-to-end on Xcode 26.5 / iOS SDK 26.5:
+make mobile-ios       # produces Mobile.xcframework (~15 MB, arm64 device + arm64/x86_64 simulator)
+
+# Android — target wired but not yet built end-to-end on this host
+# (requires a JDK + Android NDK; the underlying Go package compiles cleanly):
+make mobile-android   # produces mobile.aar
 ```
 
 After `make mobile-ios`, drag `Mobile.xcframework` into an Xcode project. The bound API:
