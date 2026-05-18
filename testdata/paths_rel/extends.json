@@ -1,0 +1,81 @@
+{
+  "params": {
+    "mcl": 4096,
+    "mcc": 4096,
+    "mpl": 4096
+  },
+  "cases": [
+    {
+      "name": "empty_prefix_empty_path",
+      "prefix_components_hex": [],
+      "path_components_hex": [],
+      "encoded_hex": "00"
+    },
+    {
+      "name": "empty_prefix_single_component",
+      "prefix_components_hex": [],
+      "path_components_hex": [
+        "616c666965"
+      ],
+      "encoded_hex": "51616c666965"
+    },
+    {
+      "name": "equal_prefix_and_path",
+      "prefix_components_hex": [
+        "666f6c646572"
+      ],
+      "path_components_hex": [
+        "666f6c646572"
+      ],
+      "encoded_hex": "00"
+    },
+    {
+      "name": "single_component_prefix_extends_by_one",
+      "prefix_components_hex": [
+        "666f6c646572"
+      ],
+      "path_components_hex": [
+        "666f6c646572",
+        "66696c65"
+      ],
+      "encoded_hex": "4166696c65"
+    },
+    {
+      "name": "single_component_prefix_extends_by_two",
+      "prefix_components_hex": [
+        "666f6c646572"
+      ],
+      "path_components_hex": [
+        "666f6c646572",
+        "737562",
+        "66696c652e747874"
+      ],
+      "encoded_hex": "b20373756266696c652e747874"
+    },
+    {
+      "name": "two_component_prefix_extends_by_one",
+      "prefix_components_hex": [
+        "61",
+        "62"
+      ],
+      "path_components_hex": [
+        "61",
+        "62",
+        "63"
+      ],
+      "encoded_hex": "1163"
+    },
+    {
+      "name": "prefix_extends_with_zero_bytes_in_suffix",
+      "prefix_components_hex": [
+        "6e616d657370616365"
+      ],
+      "path_components_hex": [
+        "6e616d657370616365",
+        "000001",
+        "66696c65"
+      ],
+      "encoded_hex": "720300000166696c65"
+    }
+  ]
+}

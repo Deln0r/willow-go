@@ -276,6 +276,48 @@ func (p Path) EncodeRelativeTo(ref Path) []byte {
 	return appendAbsolutePath(dst, suffixLen, suffix)
 }
 
+// SuffixComponents returns the components of p starting from prefixCount.
+// Panics if prefixCount > p.ComponentCount(). Returned slices share backing
+// memory with p and must not be mutated.
+func (p Path) SuffixComponents(prefixCount int) [][]byte {
+	return p.components[prefixCount:]
+}
+
+// EncodeExtending returns the byte-encoding of p relative to prefix per
+// https://willowprotocol.org/specs/encodings/index.html#path_extends_path,
+// emitting only the suffix-as-absolute-path. Panics if prefix is not a
+// path-prefix of p (caller responsibility).
+func (p Path) EncodeExtending(prefix Path) []byte {
+	if !prefix.IsPrefixOf(p) {
+		panic("datamodel: EncodeExtending requires prefix to be a prefix of self")
+	}
+	suffix := p.SuffixComponents(prefix.ComponentCount())
+	suffixLen := p.TotalLength() - prefix.TotalLength()
+	return appendAbsolutePath(nil, suffixLen, suffix)
+}
+
+// DecodeExtending reads a path-extends-path encoding from src and returns
+// the full reconstructed path (prefix + decoded suffix) plus bytes consumed.
+// The reconstructed path uses prefix's Limits.
+func DecodeExtending(prefix Path, src []byte) (Path, int, error) {
+	suffix, n, err := Decode(prefix.limits, src)
+	if err != nil {
+		return Path{}, 0, err
+	}
+	combined := make([][]byte, 0, prefix.ComponentCount()+suffix.ComponentCount())
+	for _, c := range prefix.components {
+		clone := make([]byte, len(c))
+		copy(clone, c)
+		combined = append(combined, clone)
+	}
+	combined = append(combined, suffix.components...)
+	out, err := FromSlices(prefix.limits, combined)
+	if err != nil {
+		return Path{}, 0, err
+	}
+	return out, n, nil
+}
+
 // Decode reads an absolute path encoding from src using the given limits.
 // Returns the decoded path and the number of bytes consumed.
 func Decode(limits Limits, src []byte) (Path, int, error) {
