@@ -4,7 +4,7 @@
 //
 // The implementation tracks the Rust reference at willow_rs
 // (https://codeberg.org/worm-blossom/willow_rs) and the protocol spec, and
-// is validated against the upstream test vectors.
+// is validated against fixtures generated from that reference.
 //
 // Subpackages:
 //

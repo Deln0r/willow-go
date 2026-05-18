@@ -1,0 +1,118 @@
+{
+  "params": {
+    "mcl": 4096,
+    "mcc": 4096,
+    "mpl": 4096
+  },
+  "cases": [
+    {
+      "name": "identical",
+      "reference_components_hex": [
+        "61",
+        "62"
+      ],
+      "target_components_hex": [
+        "61",
+        "62"
+      ],
+      "encoded_hex": "0200"
+    },
+    {
+      "name": "target_extends_reference",
+      "reference_components_hex": [
+        "61"
+      ],
+      "target_components_hex": [
+        "61",
+        "62",
+        "63"
+      ],
+      "encoded_hex": "0122016263"
+    },
+    {
+      "name": "reference_extends_target",
+      "reference_components_hex": [
+        "61",
+        "62",
+        "63"
+      ],
+      "target_components_hex": [
+        "61"
+      ],
+      "encoded_hex": "0100"
+    },
+    {
+      "name": "shared_prefix_then_diverge",
+      "reference_components_hex": [
+        "61",
+        "62",
+        "63"
+      ],
+      "target_components_hex": [
+        "61",
+        "62",
+        "64"
+      ],
+      "encoded_hex": "021164"
+    },
+    {
+      "name": "no_shared_prefix",
+      "reference_components_hex": [
+        "78"
+      ],
+      "target_components_hex": [
+        "79",
+        "7a"
+      ],
+      "encoded_hex": "002201797a"
+    },
+    {
+      "name": "reference_empty",
+      "reference_components_hex": [],
+      "target_components_hex": [
+        "61"
+      ],
+      "encoded_hex": "001161"
+    },
+    {
+      "name": "target_empty",
+      "reference_components_hex": [
+        "61"
+      ],
+      "target_components_hex": [],
+      "encoded_hex": "0000"
+    },
+    {
+      "name": "shared_prefix_multi_component_suffix",
+      "reference_components_hex": [
+        "73686172656431",
+        "73686172656432"
+      ],
+      "target_components_hex": [
+        "73686172656431",
+        "73686172656432",
+        "73756666697831",
+        "73756666697832"
+      ],
+      "encoded_hex": "02c20e077375666669783173756666697832"
+    },
+    {
+      "name": "shared_prefix_one_diverging_component_with_zero_byte",
+      "reference_components_hex": [
+        "636f6d6d6f6e",
+        "616c706861"
+      ],
+      "target_components_hex": [
+        "636f6d6d6f6e",
+        "0000ff"
+      ],
+      "encoded_hex": "01310000ff"
+    },
+    {
+      "name": "both_empty",
+      "reference_components_hex": [],
+      "target_components_hex": [],
+      "encoded_hex": "0000"
+    }
+  ]
+}

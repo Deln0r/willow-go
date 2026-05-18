@@ -1,0 +1,34 @@
+{
+  "params": {
+    "mcl": 8,
+    "mcc": 4,
+    "mpl": 16
+  },
+  "cases": [
+    {
+      "name": "max_component_length_exactly",
+      "components_hex": [
+        "4242424242424242"
+      ],
+      "encoded_hex": "814242424242424242"
+    },
+    {
+      "name": "max_component_count_exactly",
+      "components_hex": [
+        "61",
+        "62",
+        "63",
+        "64"
+      ],
+      "encoded_hex": "4401610162016364"
+    },
+    {
+      "name": "max_path_length_exactly",
+      "components_hex": [
+        "cccccccccccccccc",
+        "dddddddddddddddd"
+      ],
+      "encoded_hex": "c21008ccccccccccccccccdddddddddddddddd"
+    }
+  ]
+}

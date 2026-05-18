@@ -20,9 +20,9 @@ meadowcap/  Capability-based authorisation (Ed25519 signatures)
 willow25/   Default-parametrized bundle for interop with Rust impls
 encoding/   Shared binary encoders/decoders
 internal/   Implementation details, not part of the public API
-testdata/   Upstream willow_test_vectors fixtures
+testdata/   Fixtures generated from the Rust reference (see testdata/_genfixtures/)
 cmd/
-  willow-smoketest/  CLI that runs upstream fixtures and asserts byte-identity
+  willow-smoketest/  CLI that runs the fixtures and asserts byte-identity
 ```
 
 ## License

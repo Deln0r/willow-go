@@ -1,0 +1,22 @@
+[package]
+name = "willow-go-genfixtures"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Throwaway harness: invokes upstream willow_rs encoders on a fixed input set
+# and dumps JSON fixtures that Go tests assert against. Pinned to a specific
+# upstream commit so regeneration is deterministic. Will be replaced by a Go
+# generator at MVP, after the Go impl is independently trusted.
+
+[dependencies]
+willow-data-model = { git = "https://codeberg.org/worm-blossom/willow_rs.git", rev = "dd879968840417bf258bf517ef5460768f72c494" }
+ufotofu = "0.12.1"
+pollster = "0.4.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hex = "0.4"
+
+[[bin]]
+name = "gen-paths"
+path = "src/main.rs"
