@@ -1,11 +1,12 @@
 package willow25
 
-import "lukechampine.com/blake3"
-
-// HashPayload returns the 32-byte BLAKE3 digest of payload. This stands in
-// for the Willow'25 William3 digest (a BLAKE3 variant with custom domain
-// separation) until that variant is implemented; for end-to-end
-// compatibility with willow_rs payloads, see TECH_DEBT.md.
+// HashPayload returns the 32-byte WILLIAM3 digest of payload — the
+// payload-digest function defined by willow25
+// (https://willowprotocol.org/specs/willow25/index.html#willow25_data_model).
+// WILLIAM3 is the BLAKE3 compression function with a substituted IV, so
+// payloads produce DIFFERENT digests under WILLIAM3 vs vanilla BLAKE3.
+// Implementation lives in william3.go; verified byte-identical against
+// upstream bab_rs v0.5.0 on the testdata/william3/ fixtures.
 func HashPayload(payload []byte) [PayloadDigestWidth]byte {
-	return blake3.Sum256(payload)
+	return William3Sum(payload)
 }

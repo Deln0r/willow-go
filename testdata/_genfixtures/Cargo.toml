@@ -16,6 +16,7 @@ pollster = "0.4.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 hex = "0.4"
+bab_rs = "0.5.0"
 
 [[bin]]
 name = "gen-paths"
@@ -32,3 +33,7 @@ path = "src/gen_path_extends_path.rs"
 [[bin]]
 name = "gen-area-in-area"
 path = "src/gen_area_in_area.rs"
+
+[[bin]]
+name = "gen-william3"
+path = "src/gen_william3.rs"

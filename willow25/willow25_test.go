@@ -2,11 +2,57 @@ package willow25
 
 import (
 	"bytes"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/Deln0r/willow-go/datamodel"
 )
+
+type william3Case struct {
+	Name      string `json:"name"`
+	InputHex  string `json:"input_hex"`
+	DigestHex string `json:"digest_hex"`
+}
+
+type william3File struct {
+	ChunkSize   int            `json:"chunk_size"`
+	DigestWidth int            `json:"digest_width"`
+	Cases       []william3Case `json:"cases"`
+}
+
+func TestWilliam3_Fixtures(t *testing.T) {
+	t.Parallel()
+	raw, err := os.ReadFile(filepath.Join("..", "testdata", "william3", "digests.json"))
+	if err != nil {
+		t.Fatalf("read fixtures: %v", err)
+	}
+	var f william3File
+	if err := json.Unmarshal(raw, &f); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	for _, c := range f.Cases {
+		c := c
+		t.Run(c.Name, func(t *testing.T) {
+			t.Parallel()
+			input, err := hex.DecodeString(c.InputHex)
+			if err != nil {
+				t.Fatalf("decode input hex: %v", err)
+			}
+			want, err := hex.DecodeString(c.DigestHex)
+			if err != nil {
+				t.Fatalf("decode digest hex: %v", err)
+			}
+			got := HashPayload(input)
+			if !bytes.Equal(got[:], want) {
+				t.Errorf("WILLIAM3 mismatch\n got: %x\nwant: %x", got[:], want)
+			}
+		})
+	}
+}
 
 func TestLimitsAndSpec(t *testing.T) {
 	t.Parallel()
@@ -20,18 +66,16 @@ func TestLimitsAndSpec(t *testing.T) {
 	}
 }
 
-func TestHashPayload_KnownVector(t *testing.T) {
+func TestHashPayload_EmptyDifferentFromBlake3(t *testing.T) {
 	t.Parallel()
-	// Empty input BLAKE3-256 digest (the canonical reference vector).
-	want := []byte{
-		0xaf, 0x13, 0x49, 0xb9, 0xf5, 0xf9, 0xa1, 0xa6,
-		0xa0, 0x40, 0x4d, 0xea, 0x36, 0xdc, 0xc9, 0x49,
-		0x9b, 0xcb, 0x25, 0xc9, 0xad, 0xc1, 0x12, 0xb7,
-		0xcc, 0x9a, 0x93, 0xca, 0xe4, 0x1f, 0x32, 0x62,
-	}
+	// WILLIAM3(empty) is the bab_rs upstream value, distinct from BLAKE3's
+	// af1349b9... empty-input digest. Catches accidental regressions to
+	// vanilla BLAKE3.
+	wantHex := "3b638fc8f2fb68418325a36b4718ffb07de457ac301393a845466a79eea3286b"
 	got := HashPayload(nil)
-	if !bytes.Equal(got[:], want) {
-		t.Errorf("BLAKE3(empty): got %x, want %x", got[:], want)
+	gotHex := hex.EncodeToString(got[:])
+	if gotHex != wantHex {
+		t.Errorf("WILLIAM3(empty):\n got %s\nwant %s", gotHex, wantHex)
 	}
 }
 
