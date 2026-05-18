@@ -26,9 +26,9 @@ If you need WGPS sync today, use willow_rs. If you need Willow on a phone or in 
 
 ## Status
 
-Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference. WGPS sync is the explicit next phase — see the roadmap below.
+Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference + against the upstream `willow_test_vectors` corpus where the published spec is settled. WGPS sync is the explicit next phase — see the roadmap below.
 
-53 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip. 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 121 tests across 7 packages.
+53 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip. 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 123 tests across 7 packages.
 
 ## Quick start
 
@@ -84,7 +84,9 @@ Not yet implemented (see [roadmap](#phase-2-roadmap) below): WGPS sync, persiste
 
 ## Cross-implementation validation
 
-Every byte-producing encoder in willow-go is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
+Two independent corpora exercise our encoders.
+
+**A. Self-generated against willow_rs v0.7.0 (53 fixtures + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
 
 ```
 testdata/_genfixtures/         Rust harness, pinned to willow_rs dd87996
@@ -96,7 +98,7 @@ testdata/william3/digests.json                                 - 11 cases
 testdata/meadowcap/delegation_chains.json                      - 4 cases (Ed25519 signed)
 ```
 
-Total: 53 byte-compat fixtures + 4 cross-impl delegation chains.
+**B. Official upstream `willow_test_vectors` (176 vectors currently exercised)** — pulled in as a git submodule under `testdata/upstream_vectors/`. The submodule is checked out automatically by CI; locally you initialize it once with `git submodule update --init`. Adoption is in progress: absolute path encodings pass (encode_path + EncodePath = 11 positive + 165 negative cases). Relative encodings (path_rel_path, EncodePathRelativePath, path_extends_path, EncodePathExtendsPath) are deferred pending spec / willow_rs / test_vectors realignment — the upstream reencoded/ files differ from both willow_rs v0.7.0 and the spec text on willowprotocol.org as of May 2026. See `TECH_DEBT.md` (private notes) for the audit.
 
 ```sh
 $ make smoketest
@@ -109,7 +111,7 @@ areas (relative)        8 pass    0 fail
 TOTAL: 51 pass / 0 fail (51 cases)
 ```
 
-(The William3 and Meadowcap fixtures are exercised by `go test ./willow25/...` and `go test ./meadowcap/...` respectively.)
+(The William3, Meadowcap, and upstream willow_test_vectors corpora are exercised by `go test ./willow25/...`, `go test ./meadowcap/...`, and `go test ./datamodel/...` respectively.)
 
 To regenerate fixtures (Rust toolchain required):
 

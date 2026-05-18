@@ -448,10 +448,13 @@ func decodeComponents(src []byte, totalLength, count int, limits Limits) ([][]by
 			return nil, 0, wrapDecodeErr(err)
 		}
 		pos += n
-		length := int(length64)
-		if length > limits.MaxComponentLength {
+		// Guard against attacker-supplied huge length64 (e.g., 2^63+):
+		// reject before int conversion which would otherwise become negative
+		// and bypass the limit check.
+		if length64 > uint64(limits.MaxComponentLength) {
 			return nil, 0, ErrComponentTooLong
 		}
+		length := int(length64)
 		if consumedBytes+length > totalLength {
 			return nil, 0, fmt.Errorf("%w: component lengths exceed total path length", ErrMalformedPath)
 		}
