@@ -11,12 +11,16 @@ publish = false
 
 [dependencies]
 willow-data-model = { git = "https://codeberg.org/worm-blossom/willow_rs.git", rev = "dd879968840417bf258bf517ef5460768f72c494" }
+meadowcap = { git = "https://codeberg.org/worm-blossom/willow_rs.git", rev = "dd879968840417bf258bf517ef5460768f72c494" }
 ufotofu = "0.12.1"
 pollster = "0.4.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 hex = "0.4"
 bab_rs = "0.5.0"
+ed25519-dalek = { version = "2.2.0", features = ["rand_core"] }
+signature = "2.2.0"
+rand = "0.8"
 
 [[bin]]
 name = "gen-paths"
@@ -37,3 +41,7 @@ path = "src/gen_area_in_area.rs"
 [[bin]]
 name = "gen-william3"
 path = "src/gen_william3.rs"
+
+[[bin]]
+name = "gen-handover"
+path = "src/gen_handover.rs"
