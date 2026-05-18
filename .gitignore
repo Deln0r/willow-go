@@ -15,3 +15,8 @@ coverage.out
 # OS
 .DS_Store
 /.claude/settings.local.json
+
+# gomobile artifacts (regenerate with `make mobile-ios` / `make mobile-android`)
+/Mobile.xcframework/
+/mobile.aar
+/mobile-sources.jar
