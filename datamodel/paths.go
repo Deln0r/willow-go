@@ -132,6 +132,29 @@ func (p Path) IsPrefixOf(other Path) bool {
 	return true
 }
 
+// Compare returns -1, 0, or +1 comparing p to other lexicographically by
+// component. When all shared components are equal, the shorter path is less.
+// Matches the Willow spec ordering on paths.
+func (p Path) Compare(other Path) int {
+	n := len(p.components)
+	if m := len(other.components); m < n {
+		n = m
+	}
+	for i := 0; i < n; i++ {
+		if c := bytes.Compare(p.components[i], other.components[i]); c != 0 {
+			return c
+		}
+	}
+	switch {
+	case len(p.components) < len(other.components):
+		return -1
+	case len(p.components) > len(other.components):
+		return 1
+	default:
+		return 0
+	}
+}
+
 // Equal reports whether p and other have identical components.
 func (p Path) Equal(other Path) bool {
 	if len(p.components) != len(other.components) {
