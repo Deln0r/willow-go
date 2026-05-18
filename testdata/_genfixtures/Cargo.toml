@@ -20,3 +20,7 @@ hex = "0.4"
 [[bin]]
 name = "gen-paths"
 path = "src/main.rs"
+
+[[bin]]
+name = "gen-entries"
+path = "src/gen_entries.rs"
