@@ -20,9 +20,9 @@ type handoverAreaJSON struct {
 }
 
 type handoverDelegationStep struct {
-	NewArea         handoverAreaJSON `json:"new_area"`
-	NewReceiverHex  string           `json:"new_receiver_hex"`
-	SignatureHex    string           `json:"signature_hex"`
+	NewArea        handoverAreaJSON `json:"new_area"`
+	NewReceiverHex string           `json:"new_receiver_hex"`
+	SignatureHex   string           `json:"signature_hex"`
 }
 
 type handoverChainFixture struct {

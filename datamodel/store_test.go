@@ -6,10 +6,10 @@ import (
 )
 
 var (
-	nsA = []byte("namespace-a")
-	nsB = []byte("namespace-b")
-	subA = []byte("subspace-a")
-	subB = []byte("subspace-b")
+	nsA     = []byte("namespace-a")
+	nsB     = []byte("namespace-b")
+	subA    = []byte("subspace-a")
+	subB    = []byte("subspace-b")
 	digestA = []byte("digest-a-padding-padding-padding")
 	digestB = []byte("digest-b-padding-padding-padding")
 )

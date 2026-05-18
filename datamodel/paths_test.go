@@ -232,15 +232,15 @@ func mustPath(t *testing.T, limits Limits, comps [][]byte) Path {
 func componentDump(p Path) [][]byte { return p.Components() }
 
 type extendsCase struct {
-	Name                 string   `json:"name"`
-	PrefixComponentsHex  []string `json:"prefix_components_hex"`
-	PathComponentsHex    []string `json:"path_components_hex"`
-	EncodedHex           string   `json:"encoded_hex"`
+	Name                string   `json:"name"`
+	PrefixComponentsHex []string `json:"prefix_components_hex"`
+	PathComponentsHex   []string `json:"path_components_hex"`
+	EncodedHex          string   `json:"encoded_hex"`
 }
 
 type extendsFile struct {
-	Params fixtureParams  `json:"params"`
-	Cases  []extendsCase  `json:"cases"`
+	Params fixtureParams `json:"params"`
+	Cases  []extendsCase `json:"cases"`
 }
 
 func TestPath_ExtendsFixtures(t *testing.T) {

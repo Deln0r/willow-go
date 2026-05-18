@@ -2,6 +2,7 @@
 
 A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 
+[![CI](https://github.com/Deln0r/willow-go/actions/workflows/ci.yml/badge.svg)](https://github.com/Deln0r/willow-go/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/go-1.26+-blue)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Pre-MVP](https://img.shields.io/badge/status-pre--MVP-orange)]()

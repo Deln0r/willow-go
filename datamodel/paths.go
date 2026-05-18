@@ -487,4 +487,3 @@ func decodeComponents(src []byte, totalLength, count int, limits Limits) ([][]by
 func wrapDecodeErr(err error) error {
 	return fmt.Errorf("%w: %v", ErrMalformedPath, err)
 }
-
