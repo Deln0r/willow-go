@@ -3,6 +3,8 @@
 A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 
 [![CI](https://github.com/Deln0r/willow-go/actions/workflows/ci.yml/badge.svg)](https://github.com/Deln0r/willow-go/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Deln0r/willow-go.svg)](https://pkg.go.dev/github.com/Deln0r/willow-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Deln0r/willow-go)](https://goreportcard.com/report/github.com/Deln0r/willow-go)
 [![Go](https://img.shields.io/badge/go-1.26+-blue)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Pre-MVP](https://img.shields.io/badge/status-pre--MVP-orange)]()
@@ -11,24 +13,65 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 
 > Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with iOS and Android bindings via gomobile and zero cgo.
 
-## Why willow-go
+## How to read this
 
-The [Rust reference implementation](https://codeberg.org/worm-blossom/willow_rs) is excellent for native Rust applications. willow-go exists for everything Rust does not reach cleanly:
+This README claims a lot of green ticks; treat the [Status](#status) table as the source of truth. "Stable" means the byte format matches [willow_rs](https://codeberg.org/worm-blossom/willow_rs) v0.7.0 fixtures and the official [willow_test_vectors](https://github.com/worm-blossom/willow_test_vectors) where their reencoded files agree with the spec. "Partial" means the encoder is in place but parts of the cross-impl corpus are deferred — usually because the upstream vectors and the spec text on willowprotocol.org currently disagree. "Phase 2" means not implemented yet.
 
-| | willow_rs | willow-go |
-| --- | --- | --- |
-| Native iOS / Android bindings | requires cgo + cross-compile dance | `gomobile bind` produces an XCFramework / AAR |
-| Go ecosystem (Matrix, NATS, gRPC, …) | needs FFI bridge | drop-in import |
-| Container-friendly static binaries | needs musl + cross-compile | `go build` |
-| WGPS sync protocol | YES (production) | Phase 2 — planned, see roadmap |
-
-If you need WGPS sync today, use willow_rs. If you need Willow on a phone or in a Go service, this is the project.
+If you are evaluating this for a production dependency: the data model, capabilities, and Willow'25 bundle are usable today; WGPS sync is not. See the [Phase 2 roadmap](#phase-2-roadmap).
 
 ## Status
 
 Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference + against the upstream `willow_test_vectors` corpus where the published spec is settled. WGPS sync is the explicit next phase — see the roadmap below.
 
+| Component | Status | Cross-impl evidence | Source |
+| --- | --- | --- | --- |
+| CompactU64 codec | Stable | 4-bit packed + 8-bit standalone, unit-tested | [`encoding/`](encoding/) |
+| Paths (absolute) | Stable | 11 yay + 165 nay upstream vectors pass | [`datamodel/paths.go`](datamodel/paths.go) |
+| Paths (relative / extends) | Partial | Encoder + decoder ship; upstream `reencoded/` deferred pending spec / willow_rs realignment | [`datamodel/paths.go`](datamodel/paths.go) |
+| Entries | Stable | 10 fixtures byte-identical vs willow_rs v0.7.0 | [`datamodel/entry.go`](datamodel/entry.go) |
+| Areas (incl. area-in-area) | Stable | 8 fixtures byte-identical | [`datamodel/area.go`](datamodel/area.go) |
+| Range3d / groupings | Stable | Unit-tested | [`datamodel/groupings.go`](datamodel/groupings.go) |
+| In-memory Store | Stable | Prefix-pruning + concurrent access | [`datamodel/store.go`](datamodel/store.go) |
+| Persistent Store | Phase 2 | — | — |
+| Meadowcap communal capabilities | Stable | 4 Ed25519 delegation chains signed by willow_rs verify | [`meadowcap/`](meadowcap/) |
+| Meadowcap owned / read capabilities | Phase 2 | — | — |
+| WILLIAM3 payload digest | Stable | 11 cross-impl digest fixtures match bab_rs | [`willow25/william3.go`](willow25/william3.go) |
+| Willow'25 parameter bundle | Stable | 4096/4096/4096 limits, 32-byte ids | [`willow25/willow25.go`](willow25/willow25.go) |
+| Mobile (iOS + Android bindings) | Stable (iOS verified) | XCFramework built on Xcode 26.5 / iOS SDK 26.5 | [`mobile/`](mobile/) |
+| WGPS sync (set reconciliation) | Phase 2 | — | — |
+| Transport encryption | Phase 2 | — | — |
+
 53 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip. 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 123 tests across 7 packages.
+
+## Goals
+
+- A pure-Go Willow port that compiles to static binaries (no cgo) and to mobile XCFrameworks / AARs.
+- Byte-for-byte compatibility with willow_rs v0.7.0 for every encoder we ship.
+- Validation against the official spec test vectors wherever the published spec text and the test vectors agree.
+- An idiomatic Go surface: stdlib types, no surprise globals, no panics on attacker-supplied input.
+- Small, reviewable packages with one responsibility each.
+
+## Non-goals
+
+- Re-implementing every Willow encoding that the spec defines on day one. Partial / deferred items are listed in [Status](#status) and the [Phase 2 roadmap](#phase-2-roadmap).
+- Out-performing the Rust reference. We aim for "fast enough to not be the bottleneck" — see [Performance](#performance).
+- A new transport, framing, or wire protocol. Where WGPS-like demos exist in [`cmd/willow-sync-demo`](cmd/willow-sync-demo/), they are clearly marked as ad-hoc, not WGPS.
+- Drop-in interop with non-Willow protocols (Iroh-style sync, Yjs, etc.). Different problem space.
+
+## Comparison
+
+| | willow-go | willow_rs | willow-js |
+| --- | --- | --- | --- |
+| Language | Go | Rust | TypeScript |
+| Status | Pre-MVP (this repo) | Production | Reference impl |
+| Native iOS / Android bindings | `gomobile bind` → XCFramework / AAR, no cgo | Possible via cbindgen + cross-compile | Via React Native bridge |
+| Static container binaries | `go build` | Needs musl + cross-compile | Needs Node / Bun runtime |
+| Go ecosystem (Matrix, NATS, gRPC, …) | Drop-in import | FFI bridge required | FFI / IPC required |
+| WGPS sync | Phase 2 (roadmap) | Yes | Yes |
+| Persistent store | Phase 2 (sqlite via modernc.org/sqlite planned) | Yes | Yes |
+| License | MIT | MIT | MIT |
+
+If you need WGPS sync today, use willow_rs or willow-js. If you need Willow on a phone or in a Go service, this is the project.
 
 ## Quick start
 
@@ -170,6 +213,19 @@ bob recv: read=3 accepted=3 rejected=0 store_len=3
 
 This is NOT WGPS (no set reconciliation, no fingerprint trees, no channel multiplexing) — that is Phase 2. This is the minimum viable proof that the data-model + capability layers compose correctly on a duplex transport.
 
+## Performance
+
+Headline numbers on Apple M3, Go 1.26.3, single-threaded, portable code (no SIMD). See [BENCHMARKS.md](BENCHMARKS.md) for full tables and reproduction notes.
+
+| Operation | Result |
+| --- | --- |
+| WILLIAM3 sustained throughput | ~360 MB/s (8 KB+ payloads) |
+| Path encode (3 components × 16 B) | 87 ns/op, 4 allocs |
+| Entry.Encode (32 B ids + small path + 32 B digest) | 149 ns/op |
+| Store.Query, 1000 entries, full Range3d | 88 µs |
+
+For comparison, BLAKE3 with full AVX-512 / NEON reaches multi-GB/s on similar hardware. SIMD acceleration for WILLIAM3 is tracked as future work.
+
 ## Phase 2 roadmap
 
 Planned scope, in rough priority order:
@@ -210,6 +266,12 @@ Bug reports and PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the work
 - [Meadowcap capability system](https://willowprotocol.org/specs/meadowcap/)
 - [Willow'25 parameter bundle](https://willowprotocol.org/specs/willow25/)
 - [bab_rs / WILLIAM3 hash function](https://codeberg.org/worm-blossom/bab_rs)
+
+## Acknowledgements
+
+- [Aljoscha Meyer](https://aljoscha-meyer.de) and [Sam Gwilym](https://gwil.garden), authors of the Willow Protocol and maintainers of the Rust reference implementation. The spec is unusually clear and the Rust code was an indispensable reference while writing this port. Any divergence from the spec in this codebase is a willow-go bug, not theirs.
+- The [bab_rs](https://codeberg.org/worm-blossom/bab_rs) authors, whose portable WILLIAM3 implementation was ported verbatim to Go (same compression function, same message schedule, custom IV).
+- The [BLAKE3](https://github.com/BLAKE3-team/BLAKE3) team — WILLIAM3 is BLAKE3's compression with a different IV, so most of the cryptographic work was theirs.
 
 ## License
 
