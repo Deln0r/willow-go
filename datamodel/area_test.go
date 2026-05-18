@@ -2,7 +2,11 @@ package datamodel
 
 import (
 	"bytes"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -212,6 +216,133 @@ func TestArea_Intersect(t *testing.T) {
 	if _, err := a4.Intersect(a5); !errors.Is(err, ErrEmptyGrouping) {
 		t.Errorf("conflicting subspaces: err = %v, want ErrEmptyGrouping", err)
 	}
+}
+
+type areaJSON struct {
+	SubspaceHex       *string  `json:"subspace_hex"`
+	PathComponentsHex []string `json:"path_components_hex"`
+	TimesStart        uint64   `json:"times_start"`
+	TimesEnd          *uint64  `json:"times_end"`
+}
+
+type areaRelativeCase struct {
+	Name       string   `json:"name"`
+	Rel        areaJSON `json:"rel"`
+	Target     areaJSON `json:"target"`
+	EncodedHex string   `json:"encoded_hex"`
+}
+
+type areaRelativeFile struct {
+	Params struct {
+		MCL             int `json:"mcl"`
+		MCC             int `json:"mcc"`
+		MPL             int `json:"mpl"`
+		SubspaceIDWidth int `json:"subspace_id_width"`
+	} `json:"params"`
+	Cases []areaRelativeCase `json:"cases"`
+}
+
+func areaFromJSON(t *testing.T, limits Limits, j areaJSON) Area {
+	t.Helper()
+	var sub *[]byte
+	if j.SubspaceHex != nil {
+		b, err := hex.DecodeString(*j.SubspaceHex)
+		if err != nil {
+			t.Fatalf("decode subspace hex: %v", err)
+		}
+		sub = &b
+	}
+	comps := decodeHexComponents(t, j.PathComponentsHex)
+	path, err := FromSlices(limits, comps)
+	if err != nil {
+		t.Fatalf("FromSlices(path): %v", err)
+	}
+	var times TimeRange
+	if j.TimesEnd == nil {
+		times = NewTimeRangeOpen(j.TimesStart)
+	} else {
+		times, err = NewTimeRangeClosed(j.TimesStart, *j.TimesEnd)
+		if err != nil {
+			t.Fatalf("NewTimeRangeClosed: %v", err)
+		}
+	}
+	return Area{Subspace: sub, PathPrefix: path, Times: times}
+}
+
+func areaEqual(a, b Area) bool {
+	if (a.Subspace == nil) != (b.Subspace == nil) {
+		return false
+	}
+	if a.Subspace != nil && !bytes.Equal(*a.Subspace, *b.Subspace) {
+		return false
+	}
+	if !a.PathPrefix.Equal(b.PathPrefix) {
+		return false
+	}
+	return a.Times == b.Times
+}
+
+func TestArea_RelativeEncodingFixtures(t *testing.T) {
+	t.Parallel()
+	raw, err := os.ReadFile(filepath.Join("..", "testdata", "areas", "relative.json"))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	var f areaRelativeFile
+	if err := json.Unmarshal(raw, &f); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	limits := Limits{MaxComponentLength: f.Params.MCL, MaxComponentCount: f.Params.MCC, MaxPathLength: f.Params.MPL}
+
+	for _, c := range f.Cases {
+		c := c
+		t.Run(c.Name, func(t *testing.T) {
+			t.Parallel()
+			rel := areaFromJSON(t, limits, c.Rel)
+			target := areaFromJSON(t, limits, c.Target)
+			want, err := hex.DecodeString(c.EncodedHex)
+			if err != nil {
+				t.Fatalf("decode encoded hex: %v", err)
+			}
+
+			got := target.EncodeRelativeTo(rel)
+			if !bytes.Equal(got, want) {
+				t.Errorf("EncodeRelativeTo mismatch\n got: %x\nwant: %x", got, want)
+			}
+
+			decoded, n, err := DecodeAreaRelativeTo(limits, rel, f.Params.SubspaceIDWidth, want)
+			if err != nil {
+				t.Fatalf("DecodeAreaRelativeTo: %v", err)
+			}
+			if n != len(want) {
+				t.Errorf("consumed %d bytes, want %d", n, len(want))
+			}
+			if !areaEqual(decoded, target) {
+				t.Errorf("DecodeAreaRelativeTo produced non-equal area:\n got %+v subspace=%x path=%v\nwant %+v subspace=%x path=%v",
+					decoded.Times, deref(decoded.Subspace), componentDump(decoded.PathPrefix),
+					target.Times, deref(target.Subspace), componentDump(target.PathPrefix))
+			}
+		})
+	}
+}
+
+func deref(b *[]byte) []byte {
+	if b == nil {
+		return nil
+	}
+	return *b
+}
+
+func TestArea_EncodeRelativeTo_PanicsOnNonInclusion(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic when rel does not include self")
+		}
+	}()
+	rel := Area{Subspace: nil, PathPrefix: pathOf(t, "folder"), Times: FullTimeRange()}
+	target := Area{Subspace: nil, PathPrefix: pathOf(t, "other"), Times: FullTimeRange()}
+	_ = target.EncodeRelativeTo(rel)
 }
 
 func TestArea_AsRange3d(t *testing.T) {

@@ -1,0 +1,153 @@
+{
+  "params": {
+    "mcl": 4096,
+    "mcc": 4096,
+    "mpl": 4096,
+    "subspace_id_width": 32
+  },
+  "cases": [
+    {
+      "name": "full_in_full",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 0,
+        "times_end": null
+      },
+      "target": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 0,
+        "times_end": null
+      },
+      "encoded_hex": "600000"
+    },
+    {
+      "name": "narrow_subspace_no_rel_subspace",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [
+          "666f6c646572"
+        ],
+        "times_start": 100,
+        "times_end": 1000
+      },
+      "target": {
+        "subspace_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+        "path_components_hex": [
+          "666f6c646572",
+          "66696c65"
+        ],
+        "times_start": 200,
+        "times_end": 500
+      },
+      "encoded_hex": "b111111111111111111111111111111111111111111111111111111111111111116401904166696c65"
+    },
+    {
+      "name": "concrete_subspace_in_rel_with_same_subspace",
+      "rel": {
+        "subspace_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "path_components_hex": [],
+        "times_start": 0,
+        "times_end": null
+      },
+      "target": {
+        "subspace_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "path_components_hex": [
+          "61"
+        ],
+        "times_start": 10,
+        "times_end": 100
+      },
+      "encoded_hex": "300a641161"
+    },
+    {
+      "name": "rel_open_target_open_same_start",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 100,
+        "times_end": null
+      },
+      "target": {
+        "subspace_hex": null,
+        "path_components_hex": [
+          "78"
+        ],
+        "times_start": 100,
+        "times_end": null
+      },
+      "encoded_hex": "60001178"
+    },
+    {
+      "name": "rel_open_target_closed",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 0,
+        "times_end": null
+      },
+      "target": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 50,
+        "times_end": 150
+      },
+      "encoded_hex": "30329600"
+    },
+    {
+      "name": "rel_closed_start_from_end",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 0,
+        "times_end": 1000
+      },
+      "target": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 800,
+        "times_end": 950
+      },
+      "encoded_hex": "00c83200"
+    },
+    {
+      "name": "rel_closed_end_from_end",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 0,
+        "times_end": 1000
+      },
+      "target": {
+        "subspace_hex": null,
+        "path_components_hex": [],
+        "times_start": 10,
+        "times_end": 950
+      },
+      "encoded_hex": "200a3200"
+    },
+    {
+      "name": "path_extension_only",
+      "rel": {
+        "subspace_hex": null,
+        "path_components_hex": [
+          "666f6c646572"
+        ],
+        "times_start": 0,
+        "times_end": null
+      },
+      "target": {
+        "subspace_hex": null,
+        "path_components_hex": [
+          "666f6c646572",
+          "64656570",
+          "66696c652e747874"
+        ],
+        "times_start": 0,
+        "times_end": null
+      },
+      "encoded_hex": "6000c20c046465657066696c652e747874"
+    }
+  ]
+}

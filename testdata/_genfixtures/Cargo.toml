@@ -28,3 +28,7 @@ path = "src/gen_entries.rs"
 [[bin]]
 name = "gen-path-extends-path"
 path = "src/gen_path_extends_path.rs"
+
+[[bin]]
+name = "gen-area-in-area"
+path = "src/gen_area_in_area.rs"
