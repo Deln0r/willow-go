@@ -142,7 +142,7 @@ testdata/william3/digests.json                                 - 11 cases
 testdata/meadowcap/delegation_chains.json                      - 4 cases (Ed25519 signed)
 ```
 
-**B. Official upstream `willow_test_vectors` (176 vectors currently exercised)** — pulled in as a git submodule under `testdata/upstream_vectors/`. The submodule is checked out automatically by CI; locally you initialize it once with `git submodule update --init`. Adoption is in progress: absolute path encodings pass (encode_path + EncodePath = 11 positive + 165 negative cases). Relative encodings (path_rel_path, EncodePathRelativePath, path_extends_path, EncodePathExtendsPath) are deferred pending spec / willow_rs / test_vectors realignment — the upstream reencoded/ files differ from both willow_rs v0.7.0 and the spec text on willowprotocol.org as of May 2026. See `TECH_DEBT.md` (private notes) for the audit.
+**B. Official upstream `willow_test_vectors` (176 vectors currently exercised)** — pulled in as a git submodule under `testdata/upstream_vectors/`. The submodule is checked out automatically by CI; locally you initialize it once with `git submodule update --init`. Adoption is in progress: absolute path encodings pass (encode_path + EncodePath = 11 positive + 165 negative cases). Relative encodings (path_rel_path, EncodePathRelativePath, path_extends_path, EncodePathExtendsPath) are deferred pending spec / willow_rs / test_vectors realignment — the upstream reencoded/ files differ from both willow_rs v0.7.0 and the spec text on willowprotocol.org as of May 2026. See [TECH_DEBT.md](TECH_DEBT.md) for the full audit.
 
 ```sh
 $ make smoketest
