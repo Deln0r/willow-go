@@ -10,8 +10,11 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 [![Pre-MVP](https://img.shields.io/badge/status-pre--MVP-orange)]()
 [![Byte-compat vs willow_rs](https://img.shields.io/badge/byte--compat-53%2F53%20fixtures-success)]()
 [![Mobile](https://img.shields.io/badge/mobile-iOS%20%2B%20gomobile-success)]()
+[![Codeberg mirror](https://img.shields.io/badge/mirror-codeberg.org-2185d0)](https://codeberg.org/Deln0r/willow-go)
 
 > Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with mobile bindings via gomobile (iOS verified end-to-end; Android target builds but is not yet validated on a host with a JDK) and zero cgo.
+
+> **Mirrors.** Primary repository is on GitHub at [github.com/Deln0r/willow-go](https://github.com/Deln0r/willow-go); an EU-sovereign mirror auto-synced on every push lives on [codeberg.org/Deln0r/willow-go](https://codeberg.org/Deln0r/willow-go) (Codeberg e.V., Berlin) alongside the Rust reference implementation `willow_rs`.
 
 ## How to read this
 
