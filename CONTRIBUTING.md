@@ -46,7 +46,7 @@ PRs that add or modify byte encoders MUST extend the fixture corpus. Code-only e
 
 ### Authorship
 
-This project uses standard git authorship. Please do not include AI agent attribution lines (`Co-Authored-By: Claude`, `🤖 Generated with [Claude Code]`, `noreply@anthropic.com`, etc.) in commit messages. PRs containing such trailers will be asked to amend.
+This project uses standard git authorship: commits are attributed to the human author of the change. Please do not include tool-generated attribution trailers or co-author lines in commit messages. PRs containing such trailers will be asked to amend.
 
 ## Cross-implementation fixtures
 
