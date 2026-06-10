@@ -133,7 +133,7 @@ Not yet implemented (see [roadmap](#phase-2-roadmap) below): WGPS sync, persiste
 
 Two independent corpora exercise our encoders.
 
-**A. Self-generated against willow_rs v0.7.0 (51 fixtures + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
+**A. Self-generated against willow_rs v0.7.0 (51 byte-compat fixtures + 11 WILLIAM3 digest fixtures + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
 
 ```
 testdata/_genfixtures/         Rust harness, pinned to willow_rs dd87996
