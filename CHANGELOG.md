@@ -6,9 +6,17 @@
 - README badges for Go Reference, Go Report Card, Codeberg mirror.
 - README `Status` table, `Goals` / `Non-goals`, `Comparison`, `Performance`, `Acknowledgements` sections.
 - `BENCHMARKS.md` and `bench_test.go` for `datamodel` and `willow25`.
+- `SECURITY.md` with the vulnerability disclosure policy.
+- Dependabot config for gomod and github-actions (weekly, minor+patch grouped).
+- Pull request template.
 
 ### Changed
 - README `mobile/Android` row corrected from "Stable" to "Partial": the `gomobile bind -target=android` target is wired in the Makefile and the underlying package compiles cleanly, but the build has not been exercised end-to-end on a host with a JDK + Android NDK.
+- CI: `actions/checkout` bumped to v6, `actions/setup-go` bumped to v6 (Dependabot).
+
+### Fixed
+- Fixture and test counts reconciled with the smoketest output and the actual test tree: 51 byte-compat fixtures (badge and prose previously said 53), test counts now stated as top-level test functions (previous counts mixed conventions).
+- Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
 
 ### Documentation
 - Removed forward-looking funding claims and a stale private-notes path from README.
@@ -31,13 +39,13 @@ First tagged release. Pre-MVP. Datamodel, capability layer, and Willow'25 parame
 
 ### Cross-impl validation
 
-- 53 fixtures from the upstream Rust harness: byte-identical encode and lossless decode round-trip.
+- 51 fixtures from the upstream Rust harness: byte-identical encode and lossless decode round-trip.
 - 4 Meadowcap delegation chains signed by `willow_rs` verify under Go `IsValid`.
 - 176 vectors from the official `worm-blossom/willow_test_vectors` corpus pass (11 positive + 165 attacker-supplied negative cases for absolute path encodings). The negative-test pass identified and fixed one panic-level bug in the decoder.
 
 ### Tests
 
-121 tests across 7 packages. CI runs on every push and pull request.
+70 test functions across the 5 packages with test files. CI runs on every push and pull request.
 
 ### Mobile
 

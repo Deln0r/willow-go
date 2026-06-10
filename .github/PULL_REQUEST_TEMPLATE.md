@@ -27,7 +27,7 @@ If no: state "no wire change".
 
 ## Checklist
 
-- [ ] `make test` passes (all 7 packages green)
+- [ ] `make test` passes (all packages green)
 - [ ] `make smoketest` passes (byte-compat fixtures 0-fail)
 - [ ] `gofmt -s -w .` run on changed files; `go vet ./...` passes
 - [ ] Added a test that fails without this change and passes with it

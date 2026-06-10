@@ -27,7 +27,7 @@ Cross-implementation interop bugs are highest priority. If you find a byte-diver
 
 Before opening a PR:
 
-- Run `make test` (all 7 packages must stay green).
+- Run `make test` (all packages must stay green).
 - Run `make smoketest` (51 byte-compat fixtures must stay 0-fail).
 - Run `gofmt -s -w .` on changed files.
 - Add a test that fails without the change and passes with it. For encoder changes, add a fixture in `testdata/` and a corresponding case in the smoketest CLI.
