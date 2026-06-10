@@ -21,7 +21,7 @@
 //     check), and inserts accepted entries into its store.
 //
 // Run two peers in opposite directions to demonstrate sync. This is NOT
-// the WGPS sync protocol — that is Phase 2 / NLnet grant scope. This demo
+// the WGPS sync protocol; that is Phase 2 (see TECH_DEBT.md). This demo
 // shows the end-to-end capability layer works on wire.
 package main
 

@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 21 May 2026.
+Last updated: 10 June 2026.
 
 ---
 
@@ -178,7 +178,7 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 - **Origin:** The spec defines an encoding for capabilities used in sync messages.
 - **Why deferred:** Same family as the sync layer — Phase 2.
-- **Impact:** Cannot transmit capabilities to peers. Local-only use works.
+- **Impact:** No spec-canonical wire encoding for capabilities yet. The sync demo transmits capabilities with an ad-hoc length-prefixed serialisation (`cmd/willow-sync-demo`); interop with other implementations needs the spec encoding.
 - **Revisit:** Phase 2.
 
 ### willow25 typed wrappers
@@ -214,7 +214,7 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 - **Origin:** Discovered `github.com/worm-blossom/willow_test_vectors` and added as a git submodule at `testdata/upstream_vectors/`. Absolute path encodings (encode_path + EncodePath) adopted successfully — 11 positive + 165 attacker-supplied negative vectors pass; the negative-test pass found and fixed one panic-level bug in `datamodel/paths.go` decodeComponents (uint64 → int conversion without bounds check on attacker-supplied huge length64). Relative encodings (path_rel_path, EncodePathRelativePath, path_extends_path, EncodePathExtendsPath) **DO NOT** match our impl OR willow_rs v0.7.0 OR the spec text on willowprotocol.org as of May 2026.
 - **Why deferred:** The upstream `reencoded/` files for relative path encodings show a canonical form that neither matches the documented prefix-count rule nor what willow_rs v0.7.0 emits. Per direct communication with the worm-blossom team (May 2026), some upstream test vectors are out of date because the encodings have changed since they were generated; the spec always trumps the test vectors. Without authoritative documentation of the new canonical rule, aligning our impl is speculative and would break our existing byte-compat claim vs willow_rs.
 - **Impact:** Only 11/108 positive vectors and 165/2453 negative vectors are exercised. The remaining ~92 yay and ~2300 nay cover the encodings we cannot align without spec clarification.
-- **Revisit:** When (a) willow_rs HEAD progresses past dd87996 with new encoder logic that matches the test_vectors, OR (b) the spec text on willowprotocol.org is updated to document the new canonical rule, OR (c) maintainers respond with clarification. Plan: re-enable the disabled runners (preserved as `runRelativePathRelPathVectors_DISABLED` etc.), fix any divergences, and commit a new pin.
+- **Revisit:** When (a) willow_rs HEAD progresses past dd87996 with new encoder logic that matches the test_vectors, OR (b) the spec text on willowprotocol.org is updated to document the new canonical rule, OR (c) maintainers respond with clarification. Plan: reintroduce runners for the relative-encoding vector files, fix any divergences, and commit a new pin.
 
 ### Upstream willow_test_vectors: capability + 3dRange encodings
 
@@ -264,12 +264,12 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 ### path_extends_path encoding
 
-- **Closed by:** commit `e26253a`.
+- **Closed by:** commit `224cada`.
 - **Resolution:** Added `Path.EncodeExtending(prefix)` and package-level `DecodeExtending(prefix, src)`. Validated byte-identical against 7 willow_rs harness fixtures covering empty prefix + empty path, empty prefix + single component, equal prefix and path, single-component prefix extending by one / by two, two-component prefix extending by one, and a suffix containing zero bytes.
 
 ### Area relative encoding (`encode_area_in_area`)
 
-- **Closed by:** commit `f8c85f4`.
+- **Closed by:** commit `997fe10`.
 - **Resolution:** Added `Area.EncodeRelativeTo(rel)` and `DecodeAreaRelativeTo(limits, rel, subspaceWidth, src)`. Header byte packs subspace-encoded flag, times-end-open flag, two diff-from-start vs end flags, plus two 2-bit CompactU64 tags. Validated byte-identical against 8 willow_rs harness fixtures including all four start_from_start / end_from_start branches.
 
 ### William3 payload digest
@@ -280,4 +280,4 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 ### Meadowcap delegation chains
 
 - **Closed by:** chunk 6.5c.
-- **Resolution:** Extended `CommunalCapability` with `Delegations []Delegation` field. Added `AppendDelegation(prevPrivateKey, newArea, newUserKey)` that verifies area inclusion + key match and signs the handover bytes. Added `IsValid()` that walks the chain, verifying each delegation's area inclusion and signature against the previous receiver. `AuthorisationToken.Verify` now requires `IsValid()` to pass first. Handover bytes format: for first delegation `[mode_byte || namespace_key || area_encoded(initial_area) || new_receiver]`; for subsequent `[area_encoded(prev_area) || prev_signature || new_receiver]`. See related entry "Cross-impl interop test for delegation handover bytes" in active section above.
+- **Resolution:** Extended `CommunalCapability` with `Delegations []Delegation` field. Added `AppendDelegation(prevPrivateKey, newArea, newUserKey)` that verifies area inclusion + key match and signs the handover bytes. Added `IsValid()` that walks the chain, verifying each delegation's area inclusion and signature against the previous receiver. `AuthorisationToken.Verify` now requires `IsValid()` to pass first. Handover bytes format: for first delegation `[mode_byte || namespace_key || area_encoded(initial_area) || new_receiver]`; for subsequent `[area_encoded(prev_area) || prev_signature || new_receiver]`. See related entry "Read-mode delegation handover cross-impl fixture" in the active section above.

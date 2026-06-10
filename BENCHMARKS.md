@@ -55,7 +55,7 @@ The InMemoryStore uses a flat slice + linear scan. At 1000 entries the full-rang
 
 ## Mobile bridge (gomobile)
 
-The mobile package wraps the underlying datamodel + willow25 calls with thin builder types. Per-call overhead measured via `go test ./mobile -bench=.` (not currently included as a benchmark file; the work is dominated by the underlying calls above). The gomobile-generated JNI/Objective-C bridge adds tens of microseconds per call due to thread switching; this dominates for short operations like HashPayload but is negligible for whole-Entry workflows.
+The mobile package wraps the underlying datamodel + willow25 calls with thin builder types. No benchmark file is committed for the mobile package; the wrapper work is dominated by the underlying calls above. The gomobile-generated JNI/Objective-C bridge adds tens of microseconds per call due to thread switching; this dominates for short operations like HashPayload but is negligible for whole-Entry workflows.
 
 ## Reproducing
 

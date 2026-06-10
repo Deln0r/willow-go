@@ -80,7 +80,7 @@ For the iOS build, verify the generated `Mobile.xcframework/ios-arm64/Mobile.fra
 - Standard `gofmt`. `go vet ./...` must pass.
 - Idiomatic Go: no Rust-style transliteration. Generics only where the Go standard library already uses them.
 - No cgo. The whole project depends on `go build` + a few pure-Go deps; please keep it that way.
-- Public API stability is not yet a priority — breaking changes are accepted until v0.1.
+- Public API stability is not yet a priority — breaking changes are accepted until v1.0.
 - Comments: doc.go for each package, godoc on all exported symbols. Short, not essays.
 
 ## Security disclosure
