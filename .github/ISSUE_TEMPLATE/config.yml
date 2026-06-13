@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Phase 2 roadmap and known deferrals
+    url: https://github.com/Deln0r/willow-go/blob/main/TECH_DEBT.md
+    about: Planned work (sync, persistent store, transport encryption, owned/read caps) and deliberately deferred items are listed here. Check before filing a feature request.
+  - name: Security vulnerability
+    url: https://github.com/Deln0r/willow-go/blob/main/SECURITY.md
+    about: Please report security issues privately per the disclosure policy, not as a public issue.

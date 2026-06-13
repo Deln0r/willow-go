@@ -9,6 +9,7 @@
 - `SECURITY.md` with the vulnerability disclosure policy.
 - Dependabot config for gomod and github-actions (weekly, minor+patch grouped).
 - Pull request template.
+- Issue templates (bug report, feature request) with a config linking to the Phase 2 roadmap and security policy.
 
 ### Changed
 - README `mobile/Android` row corrected from "Stable" to "Partial": the `gomobile bind -target=android` target is wired in the Makefile and the underlying package compiles cleanly, but the build has not been exercised end-to-end on a host with a JDK + Android NDK.
