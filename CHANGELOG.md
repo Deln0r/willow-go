@@ -12,7 +12,7 @@
 - Issue templates (bug report, feature request) with a config linking to the Phase 2 roadmap and security policy.
 
 ### Changed
-- README `mobile/Android` row corrected from "Stable" to "Partial": the `gomobile bind -target=android` target is wired in the Makefile and the underlying package compiles cleanly, but the build has not been exercised end-to-end on a host with a JDK + Android NDK.
+- Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
 - CI: `actions/checkout` bumped to v6, `actions/setup-go` bumped to v6 (Dependabot).
 
 ### Fixed

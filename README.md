@@ -12,7 +12,7 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 [![Mobile](https://img.shields.io/badge/mobile-iOS%20%2B%20gomobile-success)]()
 [![Codeberg mirror](https://img.shields.io/badge/mirror-codeberg.org-2185d0)](https://codeberg.org/Deln0r/willow-go)
 
-> Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with mobile bindings via gomobile (iOS verified end-to-end; Android target builds but is not yet validated on a host with a JDK) and zero cgo.
+> Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with mobile bindings via gomobile (iOS XCFramework and Android AAR both built end-to-end) and zero cgo.
 
 > **Mirrors.** Primary repository is on GitHub at [github.com/Deln0r/willow-go](https://github.com/Deln0r/willow-go); an EU-sovereign mirror auto-synced on every push lives on [codeberg.org/Deln0r/willow-go](https://codeberg.org/Deln0r/willow-go) (Codeberg e.V., Berlin) alongside the Rust reference implementation `willow_rs`.
 
@@ -41,7 +41,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | WILLIAM3 payload digest | Stable | 11 cross-impl digest fixtures match bab_rs | [`willow25/william3.go`](willow25/william3.go) |
 | Willow'25 parameter bundle | Stable | 4096/4096/4096 limits, 32-byte ids | [`willow25/willow25.go`](willow25/willow25.go) |
 | Mobile bindings — iOS | Stable | XCFramework built and inspected on Xcode 26.5 / iOS SDK 26.5 | [`mobile/`](mobile/) |
-| Mobile bindings — Android | Partial | `gomobile bind -target=android` target wired in the Makefile; not yet built end-to-end on a host with a JDK + Android NDK (the underlying mobile package compiles cleanly) | [`mobile/`](mobile/) |
+| Mobile bindings — Android | Stable | AAR built end-to-end via `gomobile bind` for all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26; `classes.jar` exposes `PathBuilder` / `EntryBuilder` / `Mobile`, each ABI ships `libgojni.so` | [`mobile/`](mobile/) |
 | WGPS sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
@@ -172,7 +172,7 @@ cargo run --bin gen-william3
 cargo run --bin gen-handover
 ```
 
-## Mobile (iOS verified, Android target wired)
+## Mobile (iOS and Android both verified)
 
 The `mobile/` package exposes a gomobile-bindable surface (builder types, no `[]byte` slice arguments) so the underlying datamodel can be called from Swift / Objective-C / Java / Kotlin without writing FFI by hand.
 
@@ -185,9 +185,8 @@ gomobile init
 # iOS — verified end-to-end on Xcode 26.5 / iOS SDK 26.5:
 make mobile-ios       # produces Mobile.xcframework (~15 MB, arm64 device + arm64/x86_64 simulator)
 
-# Android — target wired but not yet built end-to-end on this host
-# (requires a JDK + Android NDK; the underlying Go package compiles cleanly):
-make mobile-android   # produces mobile.aar
+# Android — verified end-to-end on NDK 27 + OpenJDK 26:
+make mobile-android   # produces mobile.aar (~3.5 MB, all four ABIs)
 ```
 
 After `make mobile-ios`, drag `Mobile.xcframework` into an Xcode project. The bound API:

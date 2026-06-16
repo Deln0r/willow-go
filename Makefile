@@ -18,11 +18,11 @@ smoketest:
 mobile-ios:
 	gomobile bind -target=ios -o Mobile.xcframework ./mobile
 
-# Build the Android AAR. Requires Android NDK (set ANDROID_NDK_HOME),
-# a JDK on PATH (Android SDK accepts JDK 17+), and the gomobile toolchain.
+# Build the Android AAR for all four ABIs. Requires Android NDK
+# (set ANDROID_NDK_HOME), a JDK on PATH (JDK 17+), and the gomobile toolchain.
 # Output: ./mobile.aar (drop into an Android project's libs/).
 mobile-android:
-	gomobile bind -target=android/arm64 -androidapi=21 -o mobile.aar ./mobile
+	gomobile bind -target=android -androidapi=21 -o mobile.aar ./mobile
 
 # Remove generated mobile artifacts.
 mobile-clean:
