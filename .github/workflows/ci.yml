@@ -45,6 +45,12 @@ jobs:
       - name: go test
         run: go test -race -count=1 ./...
 
+      - name: fuzz smoke (decoders must not panic on attacker input)
+        run: |
+          go test ./encoding/ -run '^$' -fuzz 'FuzzDecodeCU64Standalone$' -fuzztime 20s
+          go test ./datamodel/ -run '^$' -fuzz 'FuzzDecodePath$' -fuzztime 20s
+          go test ./datamodel/ -run '^$' -fuzz 'FuzzDecodeExtending$' -fuzztime 20s
+
       - name: smoketest (byte-compat acceptance gate)
         run: go run ./cmd/willow-smoketest
 

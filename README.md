@@ -242,7 +242,7 @@ Planned scope, in rough priority order:
 2. Persistent store backend on top of `modernc.org/sqlite` (pure Go, no cgo).
 3. Transport encryption.
 4. `Area`-encoded WGPS message framing.
-5. Polished error handling + fuzz harness + benchmarks.
+5. Polished error handling + benchmarks. (A native `testing.F` fuzz harness already ships on `main`.)
 
 Timeline depends on dedicated funding. If you are interested in sponsoring or contributing to this work, please open an issue.
 

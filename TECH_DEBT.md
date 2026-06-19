@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 10 June 2026.
+Last updated: 19 June 2026.
 
 ---
 
@@ -35,12 +35,6 @@ These are planned scope items for Phase 2, deliberately deferred from pre-MVP to
 
 - **Status:** deferred from pre-MVP.
 - **Revisit:** Phase 2, after persistent store.
-
-### Fuzz harness
-
-- **Status:** Rust has `fuzz/` directory with cargo-fuzz targets for paths, encodings, etc. Go impl has none.
-- **Impact:** No property-based / structure-aware bug-finding. Currently relying on table-driven golden vectors + manual edge cases.
-- **Revisit:** Phase 2 or earlier if a bug-finding sprint is justified. Go has `testing.F` for native fuzz tests (Go 1.18+).
 
 ---
 
@@ -261,6 +255,11 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 - **Closed by:** chunk 5.5.
 - **Resolution:** Implemented per the willow_rs algorithm: scan components right-to-left, try (a) appending 0x00 to component i within MCL/MPL limits, else (b) increment the rightmost non-FF byte and truncate. Used by `Area.AsRange3d` for the path-axis bound.
+
+### Fuzz harness
+
+- **Closed by:** native `testing.F` fuzz targets on main (June 2026).
+- **Resolution:** Added `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), each seeded from existing fixtures. Targets assert the decoders never panic on attacker-supplied input, report a consumed length within bounds, respect the configured limits, and satisfy encode-idempotence. A CI step runs each target for 20s on every push. Writing the path targets immediately surfaced that the byte-for-byte round-trip assumption is wrong for the lenient decoder (it accepts non-minimal encodings), so the invariant was tightened to `Decode(Encode(p))` equality rather than input-byte equality. This is the same class of input as the 2^64-1 component-length panic the upstream negative vectors found, now under continuous fuzzing.
 
 ### path_extends_path encoding
 
