@@ -21,7 +21,7 @@
 //     check), and inserts accepted entries into its store.
 //
 // Run two peers in opposite directions to demonstrate sync. This is NOT
-// the WGPS sync protocol; that is Phase 2 (see TECH_DEBT.md). This demo
+// the Confidential Sync protocol; that is Phase 2 (see TECH_DEBT.md). This demo
 // shows the end-to-end capability layer works on wire.
 package main
 
@@ -147,7 +147,7 @@ func runRecv(tag string, in io.Reader) error {
 }
 
 // ============================================================================
-// Wire framing (kept deliberately ad-hoc; this is a demo, not WGPS).
+// Wire framing (kept deliberately ad-hoc; this is a demo, not Confidential Sync).
 // ============================================================================
 
 func writeFrame(w io.Writer, entry datamodel.Entry, token meadowcap.AuthorisationToken) error {

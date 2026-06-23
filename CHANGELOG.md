@@ -22,6 +22,7 @@
 
 ### Documentation
 - Removed forward-looking funding claims and a stale private-notes path from README.
+- Renamed "WGPS" to "Confidential Sync" across the docs and code comments to track the worm-blossom team's May 2026 rename. The first README mention and `SECURITY.md` keep a "(formerly WGPS)" bridge; `TECH_DEBT.md` documents the rename.
 
 ---
 
@@ -55,4 +56,4 @@ iOS XCFramework builds end-to-end via `gomobile bind` and was inspected on Xcode
 
 ### Not in this release
 
-WGPS sync (set reconciliation, LCMUX, PIO, transport encryption), persistent store backend, and owned / read Meadowcap capabilities are explicit Phase 2 scope. See `TECH_DEBT.md` and the README roadmap.
+Confidential Sync (set reconciliation, LCMUX, PIO, transport encryption), persistent store backend, and owned / read Meadowcap capabilities are explicit Phase 2 scope. See `TECH_DEBT.md` and the README roadmap.

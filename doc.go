@@ -14,6 +14,6 @@
 //     for interop with default-parametrized Rust impls.
 //   - encoding:  shared binary encoders/decoders used across the above.
 //
-// Pre-MVP scope deliberately excludes WGPS sync, persistent storage, and
+// Pre-MVP scope deliberately excludes Confidential Sync, persistent storage, and
 // transport-encryption layers. Those are deferred to later phases.
 package willow

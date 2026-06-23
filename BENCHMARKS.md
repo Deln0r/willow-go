@@ -77,4 +77,4 @@ For a typical Willow workload (32 B namespaces, 32 B subspaces, 3-component path
 - Bulk replay of a 1000-entry store: < 1 ms (linear scan).
 - A modern phone CPU should handle several thousand entries/sec in a single goroutine before WILLIAM3 throughput becomes the bottleneck.
 
-WGPS sync throughput will be bottlenecked by network and Ed25519 verification, not by anything measured here.
+Confidential Sync throughput will be bottlenecked by network and Ed25519 verification, not by anything measured here.

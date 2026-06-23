@@ -33,5 +33,5 @@ If no: state "no wire change".
 - [ ] Added a test that fails without this change and passes with it
 - [ ] Encoder changes only: extended the `testdata/` fixture corpus and added a smoketest case (code-only encoder changes are not merged)
 - [ ] Mobile changes only: validated the affected binding(s) per CONTRIBUTING.md
-- [ ] Scope confirmed: not a Phase 2 item (WGPS sync, persistent store, transport encryption, owned/read capabilities). If unsure, I opened an issue first.
+- [ ] Scope confirmed: not a Phase 2 item (Confidential Sync, persistent store, transport encryption, owned/read capabilities). If unsure, I opened an issue first.
 - [ ] Commits use standard git authorship (no tool-generated attribution trailers)

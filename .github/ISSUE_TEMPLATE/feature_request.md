@@ -9,7 +9,7 @@ assignees: ''
 <!--
 Before filing: this project is pre-MVP and scope is deliberately narrow.
 
-Phase 2 items (WGPS sync / Confidential Sync, persistent store, transport
+Phase 2 items (Confidential Sync, persistent store, transport
 encryption, owned-namespace and read capabilities) are already planned and
 tracked in TECH_DEBT.md and the README "Phase 2 roadmap" section. A feature
 request for one of those is not needed; it is on the list.

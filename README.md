@@ -20,11 +20,11 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 
 This README claims a lot of green ticks; treat the [Status](#status) table as the source of truth. "Stable" means the byte format matches [willow_rs](https://codeberg.org/worm-blossom/willow_rs) v0.7.0 fixtures and the official [willow_test_vectors](https://github.com/worm-blossom/willow_test_vectors) where their reencoded files agree with the spec. "Partial" means the encoder is in place but parts of the cross-impl corpus are deferred — usually because the upstream vectors and the spec text on willowprotocol.org currently disagree. "Phase 2" means not implemented yet.
 
-If you are evaluating this for a production dependency: the data model, capabilities, and Willow'25 bundle are usable today; WGPS sync is not. See the [Phase 2 roadmap](#phase-2-roadmap).
+If you are evaluating this for a production dependency: the data model, capabilities, and Willow'25 bundle are usable today; Confidential Sync (the protocol formerly called WGPS) is not. See the [Phase 2 roadmap](#phase-2-roadmap).
 
 ## Status
 
-Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference + against the upstream `willow_test_vectors` corpus where the published spec is settled. WGPS sync is the explicit next phase — see the roadmap below.
+Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference + against the upstream `willow_test_vectors` corpus where the published spec is settled. Confidential Sync is the explicit next phase — see the roadmap below.
 
 | Component | Status | Cross-impl evidence | Source |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Willow'25 parameter bundle | Stable | 4096/4096/4096 limits, 32-byte ids | [`willow25/willow25.go`](willow25/willow25.go) |
 | Mobile bindings — iOS | Stable | XCFramework built and inspected on Xcode 26.5 / iOS SDK 26.5 | [`mobile/`](mobile/) |
 | Mobile bindings — Android | Stable | AAR built end-to-end via `gomobile bind` for all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26; `classes.jar` exposes `PathBuilder` / `EntryBuilder` / `Mobile`, each ABI ships `libgojni.so` | [`mobile/`](mobile/) |
-| WGPS sync (set reconciliation) | Phase 2 | — | — |
+| Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
 51 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 73 test functions (167 runs including subtests) across the 5 packages with test files.
@@ -59,7 +59,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 
 - Re-implementing every Willow encoding that the spec defines on day one. Partial / deferred items are listed in [Status](#status) and the [Phase 2 roadmap](#phase-2-roadmap).
 - Out-performing the Rust reference. We aim for "fast enough to not be the bottleneck" — see [Performance](#performance).
-- A new transport, framing, or wire protocol. Where WGPS-like demos exist in [`cmd/willow-sync-demo`](cmd/willow-sync-demo/), they are clearly marked as ad-hoc, not WGPS.
+- A new transport, framing, or wire protocol. Where sync demos exist in [`cmd/willow-sync-demo`](cmd/willow-sync-demo/), they are clearly marked as ad-hoc, not the Confidential Sync protocol.
 - Drop-in interop with non-Willow protocols (Iroh-style sync, Yjs, etc.). Different problem space.
 
 ## Comparison
@@ -71,11 +71,11 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Native iOS / Android bindings | `gomobile bind` → XCFramework / AAR, no cgo | Possible via cbindgen + cross-compile | Via React Native bridge |
 | Static container binaries | `go build` | Needs musl + cross-compile | Needs Node / Bun runtime |
 | Go ecosystem (Matrix, NATS, gRPC, …) | Drop-in import | FFI bridge required | FFI / IPC required |
-| WGPS sync | Phase 2 (roadmap) | Yes | Yes |
+| Confidential Sync | Phase 2 (roadmap) | Yes | Yes |
 | Persistent store | Phase 2 (sqlite via modernc.org/sqlite planned) | Yes | Yes |
 | License | MIT | MIT | MIT |
 
-If you need WGPS sync today, use willow_rs or willow-js. If you need Willow on a phone or in a Go service, this is the project.
+If you need Confidential Sync today, use willow_rs or willow-js. If you need Willow on a phone or in a Go service, this is the project.
 
 ## Quick start
 
@@ -127,7 +127,7 @@ func main() {
 | Mobile | gomobile-bindable API: PathBuilder, EntryBuilder, HashPayload | [`mobile/`](mobile/) |
 | Tooling | Cross-impl smoketest CLI, end-to-end sync demo CLI | [`cmd/`](cmd/) |
 
-Not yet implemented (see [roadmap](#phase-2-roadmap) below): WGPS sync, persistent store, transport encryption, owned-namespace capabilities, read capabilities.
+Not yet implemented (see [roadmap](#phase-2-roadmap) below): Confidential Sync, persistent store, transport encryption, owned-namespace capabilities, read capabilities.
 
 ## Cross-implementation validation
 
@@ -219,7 +219,7 @@ bob recv: ACCEPT ns=58254987... path=notes/entry-002 ts=2100 payload_len=16
 bob recv: read=3 accepted=3 rejected=0 store_len=3
 ```
 
-This is NOT WGPS (no set reconciliation, no fingerprint trees, no channel multiplexing) — that is Phase 2. This is the minimum viable proof that the data-model + capability layers compose correctly on a duplex transport.
+This is NOT Confidential Sync (no set reconciliation, no fingerprint trees, no channel multiplexing) — that is Phase 2. This is the minimum viable proof that the data-model + capability layers compose correctly on a duplex transport.
 
 ## Performance
 
@@ -238,10 +238,10 @@ For comparison, BLAKE3 with full AVX-512 / NEON reaches multi-GB/s on similar ha
 
 Planned scope, in rough priority order:
 
-1. WGPS sync protocol — set reconciliation with cumulative hash fingerprints, LCMUX channel multiplexing, PIO private interest overlap.
+1. Confidential Sync protocol (formerly WGPS) — set reconciliation with cumulative hash fingerprints, LCMUX channel multiplexing, PIO private interest overlap.
 2. Persistent store backend on top of `modernc.org/sqlite` (pure Go, no cgo).
 3. Transport encryption.
-4. `Area`-encoded WGPS message framing.
+4. `Area`-encoded Confidential Sync message framing.
 5. Polished error handling + benchmarks. (A native `testing.F` fuzz harness already ships on `main`.)
 
 Timeline depends on dedicated funding. If you are interested in sponsoring or contributing to this work, please open an issue.
