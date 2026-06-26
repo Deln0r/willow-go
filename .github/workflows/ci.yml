@@ -42,6 +42,11 @@ jobs:
             exit 1
           fi
 
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.7.0
+          staticcheck ./...
+
       - name: go test
         run: go test -race -count=1 ./...
 

@@ -2,7 +2,6 @@ package datamodel
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -187,7 +186,7 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 		if r.supp {
 			mark = "X"
 		}
-		t.Log(fmt.Sprintf("  [%s] %-40s yay=%d nay=%d", mark, r.name, r.yay, r.nay))
+		t.Logf("  [%s] %-40s yay=%d nay=%d", mark, r.name, r.yay, r.nay)
 	}
-	t.Log(fmt.Sprintf("supported encoders cover %d/%d yay + %d/%d nay vectors", supportedYay, totalYay, supportedNay, totalNay))
+	t.Logf("supported encoders cover %d/%d yay + %d/%d nay vectors", supportedYay, totalYay, supportedNay, totalNay)
 }

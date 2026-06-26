@@ -11,14 +11,16 @@
 - Pull request template.
 - Issue templates (bug report, feature request) with a config linking to the Phase 2 roadmap and security policy.
 - Native `testing.F` fuzz harness: `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), seeded from existing fixtures and run for 20s each in CI. Targets assert the decoders never panic on attacker-supplied input, stay within bounds and limits, and satisfy encode-idempotence. Closes the open `TECH_DEBT.md` fuzz item.
+- CI `staticcheck` step pinned to v0.7.0 (2026.1).
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
-- CI: `actions/checkout` bumped to v6, `actions/setup-go` bumped to v6 (Dependabot).
+- CI: `actions/checkout` bumped to v7, `actions/setup-go` bumped to v6 (Dependabot).
 
 ### Fixed
 - Fixture and test counts reconciled with the smoketest output and the actual test tree: 51 byte-compat fixtures (badge and prose previously said 53), test counts now stated as top-level test functions (previous counts mixed conventions).
 - Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
+- staticcheck S1038 cleanup in `datamodel/upstream_vectors_test.go` (`t.Logf` instead of `t.Log(fmt.Sprintf(...))`) and the now-unused `fmt` import dropped.
 
 ### Documentation
 - Removed forward-looking funding claims and a stale private-notes path from README.
