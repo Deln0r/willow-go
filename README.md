@@ -125,7 +125,7 @@ func main() {
 | Capabilities | Communal write capability, multi-step Ed25519 delegation chains, AuthorisationToken | [`meadowcap/`](meadowcap/) |
 | Willow'25 | 4096/4096/4096 limits, WILLIAM3 payload digest, 32-byte ids, convenience constructors | [`willow25/`](willow25/) |
 | Mobile | gomobile-bindable API: PathBuilder, EntryBuilder, HashPayload | [`mobile/`](mobile/) |
-| Tooling | Cross-impl smoketest CLI, end-to-end sync demo CLI | [`cmd/`](cmd/) |
+| Tooling | Read-only encode/decode inspector CLI, cross-impl smoketest CLI, end-to-end sync demo CLI | [`cmd/`](cmd/) |
 
 Not yet implemented (see [roadmap](#phase-2-roadmap) below): Confidential Sync, persistent store, transport encryption, owned-namespace capabilities, read capabilities.
 
@@ -256,6 +256,7 @@ willow-go/
 ├── willow25/          Concrete 4096/4096/4096 + WILLIAM3 bundle
 ├── mobile/            gomobile-bindable wrappers
 ├── cmd/
+│   ├── willow-cli/          Read-only encode/decode/digest inspector
 │   ├── willow-smoketest/    Cross-impl byte-compat gate
 │   └── willow-sync-demo/    Pipe-based P2P sync demonstration
 └── testdata/
