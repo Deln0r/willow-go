@@ -12,8 +12,11 @@ import (
 // arranges chunks into the same binary tree BLAKE3 uses, with the same
 // 1024-byte chunk size.
 //
-// This file ports bab_rs v0.5.0's batch_hash. Verified byte-identical
-// against the upstream Rust crate on 11 fixtures (testdata/william3/).
+// This file ports bab_rs 0.8.0's batch_hash. bab_rs 0.5.0 (which an earlier
+// version of this file tracked) computed WILLIAM3 incorrectly: it did not
+// compress a block for empty input and passed a fixed block length of 64 to
+// the compression instead of the real (possibly partial) block length. 0.8.0
+// fixes both. Verified byte-identical against the upstream william3vectors.txt.
 
 const (
 	william3BlockLen  = 64
@@ -102,22 +105,33 @@ func hashInner(left, right [32]byte, subtreeLen uint64, isRoot bool, out *[32]by
 func hash1(input []byte, key [8]uint32, counter uint64, flags, flagsStart, flagsEnd uint32, out *[32]byte) {
 	cv := key
 	blockFlags := flags | flagsStart
-	slice := input
-	for len(slice) > 0 {
-		if len(slice) <= william3BlockLen {
-			blockFlags |= flagsEnd
+
+	if len(input) == 0 {
+		// Empty input still compresses one zero-padded block of length 0,
+		// carrying both the start and end flags.
+		blockFlags |= flagsEnd
+		var only [william3BlockLen]byte
+		compressInPlace(&cv, &only, 0, counter, blockFlags)
+	} else {
+		slice := input
+		for len(slice) > 0 {
+			var block [william3BlockLen]byte
+			take := len(slice)
+			if take > william3BlockLen {
+				take = william3BlockLen
+			}
+			if len(slice) <= william3BlockLen {
+				blockFlags |= flagsEnd
+			}
+			copy(block[:], slice[:take])
+			// The block length passed to the compression is the actual byte
+			// count of this (possibly partial, zero-padded) block.
+			compressInPlace(&cv, &block, uint32(take), counter, blockFlags)
+			blockFlags = flags
+			slice = slice[take:]
 		}
-		var block [william3BlockLen]byte
-		take := len(slice)
-		if take > william3BlockLen {
-			take = william3BlockLen
-		}
-		copy(block[:], slice[:take])
-		// If take < BLOCK_LEN, the remainder of block stays zero (padding).
-		compressInPlace(&cv, &block, uint32(william3BlockLen), counter, blockFlags)
-		blockFlags = flags
-		slice = slice[take:]
 	}
+
 	for i, w := range cv {
 		binary.LittleEndian.PutUint32(out[i*4:(i+1)*4], w)
 	}

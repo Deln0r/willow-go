@@ -274,7 +274,8 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 ### William3 payload digest
 
 - **Closed by:** chunk 9.
-- **Resolution:** Ported the bab_rs v0.5.0 WILLIAM3 implementation directly into `willow25/william3.go` (~110 Go LoC). WILLIAM3 is the BLAKE3 compression function with a substituted IV (the BLAKE3 IV replaced by `[0xc88f633b, 0x4168fbf2, ...]` per bab_rs/src/william3/basics.rs); same message schedule, same chunk size (1024 bytes), same Merkle tree structure. `willow25.HashPayload` now calls `William3Sum`; the previous lukechampine.com/blake3 dependency is removed from go.mod. Validated byte-identical against 11 upstream fixtures covering empty input, single-byte inputs, sub-chunk inputs, exactly-1023 / 1024 / 1025-byte chunk boundary, multi-chunk inputs (2048, 3000, 5000 bytes).
+- **Resolution:** Ported the bab_rs WILLIAM3 implementation directly into `willow25/william3.go` (~110 Go LoC). WILLIAM3 is the BLAKE3 compression function with a substituted IV (the BLAKE3 IV replaced by `[0xc88f633b, 0x4168fbf2, ...]` per bab_rs/src/william3/basics.rs); same message schedule, same chunk size (1024 bytes), same Merkle tree structure. `willow25.HashPayload` now calls `William3Sum`; the previous lukechampine.com/blake3 dependency is removed from go.mod.
+- **Correction (June 2026):** the initial port tracked bab_rs 0.5.0, which computed WILLIAM3 incorrectly (no compression for empty input, and a fixed block length of 64 passed to the compression instead of the real partial-block length). Aljoscha Meyer flagged this in issue #4. Re-ported against bab_rs 0.8.0 and now validated byte-identical against the upstream `william3vectors.txt` (18 cases, committed verbatim under `testdata/william3/`) plus the 11 local digest fixtures.
 
 ### Meadowcap delegation chains
 

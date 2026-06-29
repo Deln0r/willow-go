@@ -6,7 +6,7 @@ package willow25
 // WILLIAM3 is the BLAKE3 compression function with a substituted IV, so
 // payloads produce DIFFERENT digests under WILLIAM3 vs vanilla BLAKE3.
 // Implementation lives in william3.go; verified byte-identical against
-// upstream bab_rs v0.5.0 on the testdata/william3/ fixtures.
+// upstream bab_rs 0.8.0 (testdata/william3/william3vectors.txt).
 func HashPayload(payload []byte) [PayloadDigestWidth]byte {
 	return William3Sum(payload)
 }

@@ -68,10 +68,11 @@ func TestLimitsAndSpec(t *testing.T) {
 
 func TestHashPayload_EmptyDifferentFromBlake3(t *testing.T) {
 	t.Parallel()
-	// WILLIAM3(empty) is the bab_rs upstream value, distinct from BLAKE3's
-	// af1349b9... empty-input digest. Catches accidental regressions to
-	// vanilla BLAKE3.
-	wantHex := "3b638fc8f2fb68418325a36b4718ffb07de457ac301393a845466a79eea3286b"
+	// WILLIAM3(empty) is the bab_rs 0.8.0 upstream value, distinct from
+	// BLAKE3's af1349b9... empty-input digest. Catches accidental regressions
+	// to vanilla BLAKE3. (The pre-0.8.0 value 3b638fc8... came from the
+	// incorrect implementation that did not compress the empty block.)
+	wantHex := "96d34c5478458231e364767952aaea02a31d2203c66f4365692ef91f351068d2"
 	got := HashPayload(nil)
 	gotHex := hex.EncodeToString(got[:])
 	if gotHex != wantHex {

@@ -19,6 +19,7 @@
 - CI: `actions/checkout` bumped to v7, `actions/setup-go` bumped to v6 (Dependabot).
 
 ### Fixed
+- WILLIAM3 corrected to bab_rs 0.8.0. The earlier port tracked bab_rs 0.5.0, which computed WILLIAM3 incorrectly: it did not compress a block for empty input, and passed a fixed block length of 64 to the compression instead of the real (possibly partial) block length. Both are fixed in `willow25/william3.go`, the 11 digest fixtures are regenerated, and the upstream `william3vectors.txt` (18 cases) is committed and verified. Reported by Aljoscha Meyer (issue #4). This changes the payload-digest values for any input that is empty or not a multiple of 64 bytes.
 - Fixture and test counts reconciled with the smoketest output and the actual test tree: 51 byte-compat fixtures (badge and prose previously said 53), test counts now stated as top-level test functions (previous counts mixed conventions).
 - Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
 - staticcheck S1038 cleanup in `datamodel/upstream_vectors_test.go` (`t.Logf` instead of `t.Log(fmt.Sprintf(...))`) and the now-unused `fmt` import dropped.

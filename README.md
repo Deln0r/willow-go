@@ -38,7 +38,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Persistent Store | Phase 2 | — | — |
 | Meadowcap communal capabilities | Stable | 4 Ed25519 delegation chains signed by willow_rs verify | [`meadowcap/`](meadowcap/) |
 | Meadowcap owned / read capabilities | Phase 2 | — | — |
-| WILLIAM3 payload digest | Stable | 11 cross-impl digest fixtures match bab_rs | [`willow25/william3.go`](willow25/william3.go) |
+| WILLIAM3 payload digest | Stable | 11 digest fixtures + 18 upstream `william3vectors.txt` cases match bab_rs 0.8.0 | [`willow25/william3.go`](willow25/william3.go) |
 | Willow'25 parameter bundle | Stable | 4096/4096/4096 limits, 32-byte ids | [`willow25/willow25.go`](willow25/willow25.go) |
 | Mobile bindings — iOS | Stable | XCFramework built and inspected on Xcode 26.5 / iOS SDK 26.5 | [`mobile/`](mobile/) |
 | Mobile bindings — Android | Stable | AAR built end-to-end via `gomobile bind` for all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26; `classes.jar` exposes `PathBuilder` / `EntryBuilder` / `Mobile`, each ABI ships `libgojni.so` | [`mobile/`](mobile/) |
@@ -133,7 +133,7 @@ Not yet implemented (see [roadmap](#phase-2-roadmap) below): Confidential Sync, 
 
 Two independent corpora exercise our encoders.
 
-**A. Self-generated against willow_rs v0.7.0 (51 byte-compat fixtures + 11 WILLIAM3 digest fixtures + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
+**A. Self-generated against willow_rs v0.7.0 (51 byte-compat fixtures + 11 WILLIAM3 digest fixtures + 18 upstream WILLIAM3 vectors + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
 
 ```
 testdata/_genfixtures/         Rust harness, pinned to willow_rs dd87996
@@ -142,6 +142,7 @@ testdata/paths_rel/extends.json                                - 7 cases
 testdata/entries/basic.json                                    - 10 cases
 testdata/areas/relative.json                                   - 8 cases
 testdata/william3/digests.json                                 - 11 cases
+testdata/william3/william3vectors.txt                          - 18 cases (verbatim from bab_rs 0.8.0)
 testdata/meadowcap/delegation_chains.json                      - 4 cases (Ed25519 signed)
 ```
 
