@@ -1,4 +1,15 @@
-.PHONY: test bench smoketest mobile-ios mobile-android mobile-clean
+.PHONY: help test bench smoketest mobile-ios mobile-android mobile-clean
+
+# Show the available targets.
+help:
+	@echo "willow-go make targets:"
+	@echo "  test            run all Go unit tests"
+	@echo "  bench           run microbenchmarks (datamodel + willow25)"
+	@echo "  smoketest       run the cross-impl byte-compat acceptance gate"
+	@echo "  mobile-ios      build the iOS XCFramework (requires Xcode)"
+	@echo "  mobile-android  build the Android AAR (requires NDK + JDK)"
+	@echo "  mobile-clean    remove generated mobile artifacts"
+	@echo "See HACKING.md for fixture regeneration and fuzzing."
 
 # Run all Go unit tests.
 test:

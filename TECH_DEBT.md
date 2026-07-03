@@ -35,6 +35,7 @@ These are planned scope items for Phase 2, deliberately deferred from pre-MVP to
 
 - **Status:** deferred from pre-MVP.
 - **Revisit:** Phase 2, after persistent store.
+- **Upcoming spec change (per issue #4, Aljoscha Meyer, June 2026):** the drop-format encoding is changing. Instead of stating the number of entries (or payload subslices) up front, a dedicated terminator byte/bit signals that no more follow. This does not affect willow-go today (drop format is unimplemented, Phase 2), but the encoder should target the new shape when this work begins. Not yet in a willow_rs release as of this writing. (The other change from that issue, the WILLIAM3 correction, is already applied; see the WILLIAM3 Closed entry.)
 
 ---
 

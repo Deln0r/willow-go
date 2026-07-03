@@ -13,6 +13,7 @@
 - Native `testing.F` fuzz harness: `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), seeded from existing fixtures and run for 20s each in CI. Targets assert the decoders never panic on attacker-supplied input, stay within bounds and limits, and satisfy encode-idempotence. Closes the open `TECH_DEBT.md` fuzz item.
 - CI `staticcheck` step pinned to v0.7.0 (2026.1).
 - `cmd/willow-cli`: a read-only inspector with `path encode`/`path decode`, `entry decode`, and `digest` (WILLIAM3) subcommands, for cross-implementation interop debugging. No network, no sync, no key generation. Capability encodings are intentionally not covered (no canonical wire format yet, Phase 2).
+- `HACKING.md` contributor onboarding (repo map, everyday commands, fuzzing, fixture regeneration) and a `make help` target.
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
