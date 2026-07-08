@@ -71,6 +71,16 @@ func BenchmarkPath_Decode_Medium(b *testing.B) {
 	}
 }
 
+func BenchmarkPath_Decode_Large(b *testing.B) {
+	p := benchPath(b, 32, 128)
+	encoded := p.Encode()
+	limits := benchLimits()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _, _ = Decode(limits, encoded)
+	}
+}
+
 func BenchmarkEntry_Encode(b *testing.B) {
 	p := benchPath(b, 3, 16)
 	ns := make([]byte, 32)

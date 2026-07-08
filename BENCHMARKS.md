@@ -5,9 +5,9 @@ Performance numbers for willow-go's core encoders, decoders, and hash. All measu
 **Test setup:**
 
 - CPU: Apple M3 (8-core, 4 perf + 4 eff)
-- OS: macOS 26.3.0 (Darwin 25.3.0)
+- OS: macOS 26.5 (Darwin 25.5.0)
 - Go: 1.26.3
-- Date: 18 May 2026
+- Date: 8 July 2026
 - No SIMD acceleration (the WILLIAM3 implementation in `willow25/william3.go` is a portable pure-Go port of bab_rs/portable.rs)
 
 All numbers are single-threaded.
@@ -16,9 +16,9 @@ All numbers are single-threaded.
 
 | Path shape | Encode ns/op | Encode allocs | Decode ns/op | Decode allocs |
 | --- | --- | --- | --- | --- |
-| 3 components × 16 bytes (typical "ns/sub/file") | 87 | 4 | 75 | 4 |
-| 8 components × 64 bytes (deep typed path) | 182 | 5 | 187 | 9 |
-| 32 components × 128 bytes (pathological) | 1 399 | 10 | (not measured) | |
+| 3 components × 16 bytes (typical "ns/sub/file") | 90 | 4 | 76 | 4 |
+| 8 components × 64 bytes (deep typed path) | 185 | 5 | 196 | 9 |
+| 32 components × 128 bytes (pathological) | 1 460 | 10 | 775 | 33 |
 
 Allocations are dominated by the output byte slice and one slice per non-final component length. Encode allocates the new path; decode allocates the result components.
 
@@ -26,8 +26,8 @@ Allocations are dominated by the output byte slice and one slice per non-final c
 
 | Operation | ns/op | B/op | allocs/op |
 | --- | --- | --- | --- |
-| Entry.Encode (32B ids + small path + 32B digest) | 149 | 560 | 6 |
-| DecodeEntry (same shape) | 132 | 224 | 7 |
+| Entry.Encode (32B ids + small path + 32B digest) | 154 | 560 | 6 |
+| DecodeEntry (same shape) | 140 | 224 | 7 |
 
 Entry encoding is dominated by id+digest byte copies; the path encoding contributes ~80 ns within the total.
 
@@ -35,10 +35,10 @@ Entry encoding is dominated by id+digest byte copies; the path encoding contribu
 
 | Payload size | ns/op | Throughput | Allocs |
 | --- | --- | --- | --- |
-| 32 B | 170 | 188 MB/s | 0 |
-| 1 KB (single chunk) | 2 595 | 395 MB/s | 0 |
-| 8 KB (8 chunks) | 22 456 | 365 MB/s | 0 |
-| 1 MB (1024 chunks, 10-level tree) | 2 906 241 | 361 MB/s | 0 |
+| 32 B | 171 | 187 MB/s | 0 |
+| 1 KB (single chunk) | 2 623 | 390 MB/s | 0 |
+| 8 KB (8 chunks) | 22 356 | 366 MB/s | 0 |
+| 1 MB (1024 chunks, 10-level tree) | 2 913 073 | 360 MB/s | 0 |
 
 Sustained throughput is ~360 MB/s on a single M3 core. The 32 B case is dominated by per-call setup; larger inputs amortize this and converge near the steady-state.
 
@@ -49,7 +49,7 @@ For comparison, BLAKE3 with full SIMD (AVX-512 / NEON) reaches multi-GB/s on sim
 | Operation | ns/op | B/op | allocs |
 | --- | --- | --- | --- |
 | Insert into empty store | 86 | 288 | 5 |
-| Query 1000 entries, full Range3d, linear scan | 87 907 | 586 104 | 3 012 |
+| Query 1000 entries, full Range3d, linear scan | 89 341 | 586 102 | 3 012 |
 
 The InMemoryStore uses a flat slice + linear scan. At 1000 entries the full-range query takes ~88 µs (88 ns per entry visited). For larger workloads, add an index by namespace + (subspace, path) — tracked in TECH_DEBT.md.
 
