@@ -15,6 +15,7 @@
 - `cmd/willow-cli`: a read-only inspector with `path encode`/`path decode`, `entry decode`, and `digest` (WILLIAM3) subcommands, for cross-implementation interop debugging. No network, no sync, no key generation. Capability encodings are intentionally not covered (no canonical wire format yet, Phase 2).
 - `HACKING.md` contributor onboarding (repo map, everyday commands, fuzzing, fixture regeneration) and a `make help` target.
 - `BenchmarkPath_Decode_Large` (32 components × 128 bytes) filling the previously unmeasured pathological-decode cell in `BENCHMARKS.md`; benchmark numbers and date refreshed on Go 1.26.3.
+- Runnable godoc examples rendered on pkg.go.dev: `Path.Encode`, `Decode`, `Area.EncodeRelativeTo` (datamodel), `HashPayload` (willow25), and `CommunalCapability.AppendDelegation` (meadowcap). Each is verified by `go test`.
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
