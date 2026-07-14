@@ -126,6 +126,9 @@ fn gen_basic() {
     let component_12_bytes: &[u8] = &[0x55; 12];
     let component_255_bytes: &[u8] = &[0x66; 255];
     let component_256_bytes: &[u8] = &[0x66; 256];
+    let component_251_bytes: &[u8] = &[0x33; 251];
+    let high_a: &[u8] = &[0xff, 0xfe];
+    let high_b: &[u8] = &[0x80, 0x01];
 
     let file = AbsoluteFile {
         params: Params { mcl: MCL, mcc: MCC, mpl: MPL },
@@ -143,6 +146,9 @@ fn gen_basic() {
             make("component_count_11_tag_boundary_last_inline", many_one_byte_components_11),
             make("component_count_12_tag_boundary_first_follow_byte", many_one_byte_components_12),
             make("standalone_cu64_component_len_252", &[&[0x77; 252], b"tail"]),
+            make("component_len_251_inline_boundary", &[component_251_bytes]),
+            make("multi_high_bytes", &[high_a, high_b]),
+            make("deep_five_components", &[b"a", b"bb", b"ccc", b"dddd", b"eeeee"]),
         ],
     };
 

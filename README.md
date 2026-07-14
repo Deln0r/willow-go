@@ -8,7 +8,7 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 [![Go](https://img.shields.io/badge/go-1.26+-blue)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Pre-MVP](https://img.shields.io/badge/status-pre--MVP-orange)]()
-[![Byte-compat vs willow_rs](https://img.shields.io/badge/byte--compat-51%2F51%20fixtures-success)]()
+[![Byte-compat vs willow_rs](https://img.shields.io/badge/byte--compat-54%2F54%20fixtures-success)]()
 [![Mobile](https://img.shields.io/badge/mobile-iOS%20%2B%20gomobile-success)]()
 [![Codeberg mirror](https://img.shields.io/badge/mirror-codeberg.org-2185d0)](https://codeberg.org/Deln0r/willow-go)
 
@@ -45,7 +45,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
-51 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 73 test functions (167 runs including subtests) across the 5 packages with test files.
+54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 73 test functions (167 runs including subtests) across the 5 packages with test files.
 
 ## Goals
 
@@ -133,11 +133,11 @@ Not yet implemented (see [roadmap](#phase-2-roadmap) below): Confidential Sync, 
 
 Two independent corpora exercise our encoders.
 
-**A. Self-generated against willow_rs v0.7.0 (51 byte-compat fixtures + 11 WILLIAM3 digest fixtures + 18 upstream WILLIAM3 vectors + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
+**A. Self-generated against willow_rs v0.7.0 (54 byte-compat fixtures + 11 WILLIAM3 digest fixtures + 18 upstream WILLIAM3 vectors + 4 cross-impl Meadowcap chains)** — every byte-producing encoder is verified against the Rust reference by a fixture corpus generated from a pinned upstream commit:
 
 ```
 testdata/_genfixtures/         Rust harness, pinned to willow_rs dd87996
-testdata/paths/                {basic, limits, relative}.json  - 26 cases
+testdata/paths/                {basic, limits, relative}.json  - 29 cases
 testdata/paths_rel/extends.json                                - 7 cases
 testdata/entries/basic.json                                    - 10 cases
 testdata/areas/relative.json                                   - 8 cases
@@ -150,13 +150,13 @@ testdata/meadowcap/delegation_chains.json                      - 4 cases (Ed2551
 
 ```sh
 $ make smoketest
-paths (absolute)       16 pass    0 fail
+paths (absolute)       19 pass    0 fail
 paths (relative)       10 pass    0 fail
 paths (extends)         7 pass    0 fail
 entries                10 pass    0 fail
 areas (relative)        8 pass    0 fail
 
-TOTAL: 51 pass / 0 fail (51 cases)
+TOTAL: 54 pass / 0 fail (54 cases)
 ```
 
 (The William3, Meadowcap, and upstream willow_test_vectors corpora are exercised by `go test ./willow25/...`, `go test ./meadowcap/...`, and `go test ./datamodel/...` respectively.)
