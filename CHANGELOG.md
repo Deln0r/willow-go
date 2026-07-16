@@ -3,7 +3,7 @@
 ### Added
 - Codeberg mirror auto-synced from GitHub Actions on every push to `main` and on tags.
 - Public `TECH_DEBT.md` enumerating known Phase 2 deferrals and closed items.
-- README badges for Go Reference, Go Report Card, Codeberg mirror.
+- README badges for Go Reference and Codeberg mirror.
 - README `Status` table, `Goals` / `Non-goals`, `Comparison`, `Performance`, `Acknowledgements` sections.
 - `BENCHMARKS.md` and `bench_test.go` for `datamodel` and `willow25`.
 - `SECURITY.md` with the vulnerability disclosure policy.
