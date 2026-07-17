@@ -1,16 +1,3 @@
-// Package meadowcap implements the Meadowcap capability system. See
-// https://willowprotocol.org/specs/meadowcap/.
-//
-// Pre-MVP scope is deliberately narrow: communal genesis capabilities only,
-// no delegation chains. A communal capability binds a single receiver
-// (user_key) to a single subspace within a namespace. The
-// AuthorisationToken type wraps such a capability with a signature over the
-// entry's canonical encoding by the receiver's keypair, and is the unit a
-// Store uses to gate entry insertions.
-//
-// Delegation chains (multi-step capability handover) and owned namespaces
-// are tracked in TECH_DEBT.md; both depend on Area relative encoding which
-// is not yet implemented.
 package meadowcap
 
 import (

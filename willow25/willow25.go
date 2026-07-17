@@ -1,14 +1,3 @@
-// Package willow25 is the Willow'25 specialisation of the generic
-// datamodel and meadowcap layers. It fixes path limits to 4096 / 4096 /
-// 4096 bytes-per-component / components-per-path / total-path-bytes (per
-// https://willowprotocol.org/specs/willow25/), pins NamespaceID and
-// SubspaceID to 32-byte Ed25519 public keys, pins PayloadDigest to a
-// 32-byte BLAKE3 hash, and provides convenience constructors that bundle
-// these choices together.
-//
-// Application code that does not need to swap parameters should depend on
-// this package and only drop down to datamodel / meadowcap / encoding for
-// advanced cases.
 package willow25
 
 import (

@@ -1,14 +1,3 @@
-// Package encoding provides shared binary primitives used by the higher-level
-// Willow types.
-//
-// CompactU64 is a variable-length encoding for u64 values: small numbers are
-// inlined into a tag, larger ones spill into 1, 2, 4, or 8 follow-up bytes.
-// Tags can be 2..=8 bits wide and may be packed alongside other tags into a
-// single byte. See https://willowprotocol.org/specs/encodings/index.html#compact_integers.
-//
-// This file mirrors the compact_u64 Rust crate (v0.6.0). The encoding is
-// canonical: each value has exactly one minimal representation, and decoders
-// can be asked to reject non-minimal forms.
 package encoding
 
 import (

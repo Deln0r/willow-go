@@ -1,16 +1,3 @@
-// Package mobile is the gomobile-bindable surface of willow-go. It exposes a
-// small subset of the data-model and willow25 APIs through types that
-// gomobile can translate to Java (Android AAR) and Objective-C (iOS
-// Framework). The full Go API in datamodel/, meadowcap/, and willow25/ is
-// not bindable as-is because it uses [][]byte, *[]byte, custom interfaces,
-// and pointer receivers in ways gomobile does not directly support.
-//
-// To build:
-//
-//	gomobile bind -target=ios     ./mobile   # produces Mobile.xcframework
-//	gomobile bind -target=android ./mobile   # produces mobile.aar
-//
-// See README.md for the full mobile workflow.
 package mobile
 
 import (

@@ -1,10 +1,3 @@
-// Package datamodel implements the Willow data model: Paths, Entries,
-// Groupings, and the Store interface. See https://willowprotocol.org/specs/data-model/.
-//
-// This file implements Path. A Path is an ordered sequence of byte-slice
-// components subject to three size constraints (max_component_length,
-// max_component_count, max_path_length) that callers configure per-Path via a
-// Limits value. Paths are immutable once constructed.
 package datamodel
 
 import (

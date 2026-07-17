@@ -18,6 +18,7 @@
 - Runnable godoc examples rendered on pkg.go.dev: `Path.Encode`, `Decode`, `Area.EncodeRelativeTo` (datamodel), `HashPayload` (willow25), and `CommunalCapability.AppendDelegation` (meadowcap). Each is verified by `go test`.
 - Property-based round-trip tests for CompactU64 via `testing/quick`, covering every tag width 2..8 (packed) and the standalone framing.
 - Three new absolute-path byte-compat fixtures (251-byte inline boundary, high-byte components, five-component depth), regenerated from willow_rs via the Rust harness. Smoketest corpus is now 54 cases.
+- `doc.go` package overviews for `encoding`, `datamodel`, `meadowcap`, `willow25`, and `mobile`, moved out of the individual source files so each package has exactly one package comment.
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
@@ -28,6 +29,7 @@
 - Fixture and test counts reconciled with the smoketest output and the actual test tree: 51 byte-compat fixtures (badge and prose previously said 53), test counts now stated as top-level test functions (previous counts mixed conventions).
 - Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
 - staticcheck S1038 cleanup in `datamodel/upstream_vectors_test.go` (`t.Logf` instead of `t.Log(fmt.Sprintf(...))`) and the now-unused `fmt` import dropped.
+- Stale package documentation: `meadowcap` claimed communal capabilities only with "no delegation chains" and that Area relative encoding was unimplemented (both have shipped since), and `willow25` described the payload digest as BLAKE3 when it is WILLIAM3 (BLAKE3's compression with a substituted IV, and the blake3 dependency is long gone).
 
 ### Documentation
 - Removed forward-looking funding claims and a stale private-notes path from README.
