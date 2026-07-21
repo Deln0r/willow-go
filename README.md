@@ -221,6 +221,27 @@ bob recv: read=3 accepted=3 rejected=0 store_len=3
 
 This is NOT Confidential Sync (no set reconciliation, no fingerprint trees, no channel multiplexing) — that is Phase 2. This is the minimum viable proof that the data-model + capability layers compose correctly on a duplex transport.
 
+## Command-line inspector
+
+`cmd/willow-cli` is a read-only tool for looking at Willow'25 encodings, handy for cross-implementation interop debugging. Paste a hex dump from willow_rs or willow-js and see how this implementation parses it, or produce a canonical encoding to diff byte-for-byte. Hex arguments accept a leading `0x` and internal whitespace.
+
+```sh
+$ go run ./cmd/willow-cli path encode notes greeting.txt
+c211056e6f7465736772656574696e672e747874
+
+$ go run ./cmd/willow-cli path decode c211056e6f7465736772656574696e672e747874
+components:   2
+total length: 17
+consumed:     20 of 20 bytes
+  [0] 6e6f746573 "notes"
+  [1] 6772656574696e672e747874 "greeting.txt"
+
+$ printf 'hello, willow' | go run ./cmd/willow-cli digest
+79ae22083788320af5801eaab3becf3b8c044d0d5523f93e1f3150aee4481017
+```
+
+`entry decode <hex>` prints the fields of an encoded Entry. Capability encodings are not covered: Willow has no canonical capability wire format yet (Phase 2). Run `willow-cli help` for the full list.
+
 ## Performance
 
 Headline numbers on Apple M3, Go 1.26.3, single-threaded, portable code (no SIMD). See [BENCHMARKS.md](BENCHMARKS.md) for full tables and reproduction notes.

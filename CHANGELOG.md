@@ -19,6 +19,7 @@
 - Property-based round-trip tests for CompactU64 via `testing/quick`, covering every tag width 2..8 (packed) and the standalone framing.
 - Three new absolute-path byte-compat fixtures (251-byte inline boundary, high-byte components, five-component depth), regenerated from willow_rs via the Rust harness. Smoketest corpus is now 54 cases.
 - `doc.go` package overviews for `encoding`, `datamodel`, `meadowcap`, `willow25`, and `mobile`, moved out of the individual source files so each package has exactly one package comment.
+- `willow-cli` unit tests and README usage section. Hex arguments now tolerate a leading `0x` and internal whitespace, odd-length hex gives a specific error, and decode reports trailing bytes that are not part of the encoding.
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
