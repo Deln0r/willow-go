@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // Package datamodel implements the Willow data model: Paths, Entries,
 // Groupings (Range3d and Area), and the Store interface.
 // See https://willowprotocol.org/specs/data-model/.

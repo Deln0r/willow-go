@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // willow-sync-demo is a minimal proof-of-concept that two willow-go
 // processes can exchange Meadowcap-authorised entries over a duplex
 // transport. The transport here is just stdin / stdout (pipe one peer's

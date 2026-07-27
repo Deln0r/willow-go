@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // willow-smoketest is a CLI that exercises the Go impl against every
 // committed byte-compat fixture under testdata/ and reports pass/fail
 // counts per fixture group. Exit code 0 if all fixtures pass, 1 otherwise.

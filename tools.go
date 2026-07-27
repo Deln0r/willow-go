@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 //go:build tools
 
 // Package tools forces `go mod tidy` to keep build-time tooling

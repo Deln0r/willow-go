@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // willow-cli is a read-only inspection and debugging tool for Willow
 // encodings. It encodes and decodes the canonical wire formats that
 // willow-go ships today, which makes it useful for cross-implementation

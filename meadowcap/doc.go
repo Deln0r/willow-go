@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // Package meadowcap implements the Meadowcap capability system.
 // See https://willowprotocol.org/specs/meadowcap/.
 //

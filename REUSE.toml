@@ -1,0 +1,28 @@
+version = 1
+
+# Files that cannot carry an SPDX header comment (data, config, docs) are
+# annotated here instead. Go source files carry their own SPDX headers.
+
+[[annotations]]
+path = [
+    "**/*.md",
+    "**/*.json",
+    "**/*.yml",
+    "**/*.rs",
+    "**/*.toml",
+    "go.mod",
+    "go.sum",
+    "Makefile",
+    "**/.gitignore",
+    ".gitmodules",
+    "testdata/_genfixtures/Cargo.lock",
+]
+SPDX-FileCopyrightText = "2026 Ian Chechin"
+SPDX-License-Identifier = "MIT"
+
+# Vendored verbatim from bab_rs (worm-blossom), used as the upstream WILLIAM3
+# ground truth. Attributed to its origin, not to this project.
+[[annotations]]
+path = "testdata/william3/william3vectors.txt"
+SPDX-FileCopyrightText = "2025 worm-blossom"
+SPDX-License-Identifier = "MIT"

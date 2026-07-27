@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // Package willow is a pure-Go implementation of the Willow Protocol
 // (https://willowprotocol.org), a peer-to-peer protocol for synchronizable
 // data stores with fine-grained capability-based permissions.

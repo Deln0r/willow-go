@@ -59,6 +59,14 @@ jobs:
       - name: smoketest (byte-compat acceptance gate)
         run: go run ./cmd/willow-smoketest
 
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: reuse lint
+        uses: fsfe/reuse-action@v5
+
   mobile:
     name: gomobile bind dry-run
     runs-on: macos-latest

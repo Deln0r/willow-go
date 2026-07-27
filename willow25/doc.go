@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // Package willow25 is the Willow'25 specialisation of the generic datamodel
 // and meadowcap layers. See https://willowprotocol.org/specs/willow25/.
 //

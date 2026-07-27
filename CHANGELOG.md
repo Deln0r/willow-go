@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- REUSE 3.3 compliance: SPDX headers on every Go source file, a `REUSE.toml` covering data / config / docs, `LICENSES/MIT.txt`, and a `reuse lint` CI job. The vendored `william3vectors.txt` is attributed to its upstream (worm-blossom) rather than to this project.
 - Codeberg mirror auto-synced from GitHub Actions on every push to `main` and on tags.
 - Public `TECH_DEBT.md` enumerating known Phase 2 deferrals and closed items.
 - README badges for Go Reference and Codeberg mirror.

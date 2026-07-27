@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // Package encoding provides the shared binary primitives used by the
 // higher-level Willow types.
 //

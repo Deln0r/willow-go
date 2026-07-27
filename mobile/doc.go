@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Ian Chechin
+// SPDX-License-Identifier: MIT
+
 // Package mobile is the gomobile-bindable surface of willow-go. It exposes a
 // subset of the data-model and willow25 APIs through types gomobile can
 // translate to Java (Android AAR) and Objective-C (iOS framework). The full Go
