@@ -24,7 +24,8 @@
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
-- CI: `actions/checkout` bumped to v7, `actions/setup-go` bumped to v6 (Dependabot).
+- CI: `actions/checkout` and `actions/setup-go` bumped to v7 (Dependabot).
+- Dropped the Go Report Card badge: goreportcard.com is sunsetting, so the badge and its report link no longer resolve.
 
 ### Fixed
 - WILLIAM3 corrected to bab_rs 0.8.0. The earlier port tracked bab_rs 0.5.0, which computed WILLIAM3 incorrectly: it did not compress a block for empty input, and passed a fixed block length of 64 to the compression instead of the real (possibly partial) block length. Both are fixed in `willow25/william3.go`, the 11 digest fixtures are regenerated, and the upstream `william3vectors.txt` (18 cases) is committed and verified. Reported by Aljoscha Meyer (issue #4). This changes the payload-digest values for any input that is empty or not a multiple of 64 bytes.
@@ -32,6 +33,7 @@
 - Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
 - staticcheck S1038 cleanup in `datamodel/upstream_vectors_test.go` (`t.Logf` instead of `t.Log(fmt.Sprintf(...))`) and the now-unused `fmt` import dropped.
 - Stale package documentation: `meadowcap` claimed communal capabilities only with "no delegation chains" and that Area relative encoding was unimplemented (both have shipped since), and `willow25` described the payload digest as BLAKE3 when it is WILLIAM3 (BLAKE3's compression with a substituted IV, and the blake3 dependency is long gone).
+- README test counts refreshed after the CLI, property, fuzz, and example tests landed: 83 test functions across 6 packages (204 runs including subtests).
 
 ### Documentation
 - Removed forward-looking funding claims and a stale private-notes path from README.

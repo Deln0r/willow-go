@@ -10,6 +10,7 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 [![Byte-compat vs willow_rs](https://img.shields.io/badge/byte--compat-54%2F54%20fixtures-success)]()
 [![Mobile](https://img.shields.io/badge/mobile-iOS%20%2B%20gomobile-success)]()
 [![Codeberg mirror](https://img.shields.io/badge/mirror-codeberg.org-2185d0)](https://codeberg.org/Deln0r/willow-go)
+[![REUSE 3.3](https://img.shields.io/badge/REUSE-3.3%20compliant-success)](https://reuse.software/)
 
 > Willow is a peer-to-peer protocol for synchronisable data stores with capability-based permissions. willow-go ports the data model, the Meadowcap capability layer, and the Willow'25 parameter bundle to idiomatic Go, with mobile bindings via gomobile (iOS XCFramework and Android AAR both built end-to-end) and zero cgo.
 
@@ -44,7 +45,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
-54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 73 test functions (167 runs including subtests) across the 5 packages with test files.
+54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 83 test functions (204 runs including subtests) across the 6 packages with test files.
 
 ## Goals
 
@@ -306,3 +307,5 @@ Bug reports and PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the work
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The repository is [REUSE 3.3](https://reuse.software/) compliant: every file carries copyright and licensing information, either as an SPDX header or via `REUSE.toml`. `reuse lint` runs in CI.
