@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: reuse lint
-        uses: fsfe/reuse-action@v5
+        uses: fsfe/reuse-action@v6
 
   mobile:
     name: gomobile bind dry-run
