@@ -36,6 +36,7 @@
 - README test counts refreshed after the CLI, property, fuzz, and example tests landed: 83 test functions across 6 packages (204 runs including subtests).
 
 ### Documentation
+- Noted in `TECH_DEBT.md` that willow_rs 0.7.0 removed the `willow_data_model` and `meadowcap` crates the fixture harness pins. The harness pins a commit SHA and still builds, so nothing changes today, but the regeneration path is frozen until the harness is replaced by a Go generator.
 - Removed forward-looking funding claims and a stale private-notes path from README.
 - Renamed "WGPS" to "Confidential Sync" across the docs and code comments to track the worm-blossom team's May 2026 rename. The first README mention and `SECURITY.md` keep a "(formerly WGPS)" bridge; `TECH_DEBT.md` documents the rename.
 

@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 29 July 2026.
+Last updated: 13 August 2026.
 
 ---
 
@@ -98,6 +98,13 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 - **Why deferred:** Pre-MVP entries are produced by our own encoder, which is always minimal. No risk of non-canonical inputs in the local workflow.
 - **Impact:** Cannot reject malformed-but-decodable inputs from a hostile peer. Required before any cross-impl interop where the peer is untrusted.
 - **Revisit:** Phase 2 alongside Confidential Sync. Add `DecodeCanonic` variants on `Path` and `Entry` and wire them through.
+
+### Upstream removed the crates our fixture harness pins
+
+- **Origin:** willow_rs 0.7.0 (10 August 2026) deprecated and deleted the `willow_data_model` and `meadowcap` crates, implementing `willow25` directly instead of layering it over a generic implementation ("no_more_generics", upstream reasoning at worm-blossom.org archive y2026w9a4). Both crates are the dependencies of `testdata/_genfixtures`.
+- **Impact right now: none.** The harness pins a commit SHA (`dd87996`), not a branch, so it still resolves and still builds; verified 13 August 2026. Every committed fixture and the 54-case smoketest are unaffected, since fixtures are generated artefacts and the bytes have not changed.
+- **What it does mean:** the fixture-regeneration path is now frozen at that SHA. Bumping the pin forward is no longer a version bump but a rewrite of the harness against the new non-generic `willow25` API.
+- **Revisit:** at MVP, when the Rust harness is replaced by a Go generator (already planned in `testdata/_genfixtures/README.md`). That removes the dependency entirely and is the cheaper path than porting the harness to the new upstream API. Until then, do not attempt a pin bump.
 
 ### `Bytes32` (Rust harness) missing `Decodable` / `DecodableCanonic`
 
