@@ -6,6 +6,7 @@ package datamodel
 import (
 	"bytes"
 	"fmt"
+	"math"
 
 	"github.com/Deln0r/willow-go/encoding"
 )
@@ -218,6 +219,9 @@ func (a Area) EncodeRelativeTo(rel Area) []byte {
 // the reference. subspaceWidth is the byte length of explicit subspace ids
 // — needed when rel.Subspace is nil and the encoded area carries its own
 // subspace bytes. Returns the decoded area and the number of bytes consumed.
+//
+// Encodings of areas that rel does not include are rejected, as are time
+// differences that overflow, matching the willow_rs EncodeAreaInArea decoder.
 func DecodeAreaRelativeTo(limits Limits, rel Area, subspaceWidth int, src []byte) (Area, int, error) {
 	if len(src) < 1 {
 		return Area{}, 0, fmt.Errorf("area: %w", encoding.ErrShortBuffer)
@@ -230,17 +234,21 @@ func DecodeAreaRelativeTo(limits Limits, rel Area, subspaceWidth int, src []byte
 	startFromStart := header&0b0010_0000 != 0
 	endFromStart := header&0b0001_0000 != 0
 
-	// Decode subspace.
+	if timesEndOpen && endFromStart {
+		return Area{}, 0, fmt.Errorf("area: end_from_start set for an open time range")
+	}
+
+	// Decode subspace. An explicit subspace id must equal rel's, if rel has one.
 	var sub *[]byte
 	if subspaceEncoded {
-		if rel.Subspace != nil {
-			return Area{}, 0, fmt.Errorf("area: subspace_encoded bit set but rel has a concrete subspace")
-		}
 		if pos+subspaceWidth > len(src) {
 			return Area{}, 0, fmt.Errorf("area subspace: %w", encoding.ErrShortBuffer)
 		}
 		owned := make([]byte, subspaceWidth)
 		copy(owned, src[pos:pos+subspaceWidth])
+		if rel.Subspace != nil && !bytes.Equal(owned, *rel.Subspace) {
+			return Area{}, 0, fmt.Errorf("area: encoded subspace is not rel's subspace")
+		}
 		sub = &owned
 		pos += subspaceWidth
 	} else if rel.Subspace != nil {
@@ -260,6 +268,9 @@ func DecodeAreaRelativeTo(limits Limits, rel Area, subspaceWidth int, src []byte
 
 	var start uint64
 	if startFromStart {
+		if startDiff > math.MaxUint64-rel.Times.Start {
+			return Area{}, 0, fmt.Errorf("area start_diff: addition overflow")
+		}
 		start = rel.Times.Start + startDiff
 	} else {
 		if rel.Times.Open {
@@ -281,6 +292,9 @@ func DecodeAreaRelativeTo(limits Limits, rel Area, subspaceWidth int, src []byte
 		}
 		pos += n
 		if endFromStart {
+			if endDiff > math.MaxUint64-rel.Times.Start {
+				return Area{}, 0, fmt.Errorf("area end_diff: addition overflow")
+			}
 			end = rel.Times.Start + endDiff
 		} else {
 			if rel.Times.Open {
@@ -303,6 +317,9 @@ func DecodeAreaRelativeTo(limits Limits, rel Area, subspaceWidth int, src []byte
 		if err != nil {
 			return Area{}, 0, fmt.Errorf("area times: %w", err)
 		}
+	}
+	if !rel.Times.includesRange(times) {
+		return Area{}, 0, fmt.Errorf("area times: not included in rel's time range")
 	}
 
 	// Decode path-extends-path.
@@ -345,15 +362,5 @@ func (a Area) includesArea(other Area) bool {
 		return false
 	}
 	// Times: a.Times must contain other.Times.
-	if other.Times.Start < a.Times.Start {
-		return false
-	}
-	if a.Times.Open {
-		return true
-	}
-	// a closed: other must also be closed (else other extends past a)
-	if other.Times.Open {
-		return false
-	}
-	return other.Times.End <= a.Times.End
+	return a.Times.includesRange(other.Times)
 }

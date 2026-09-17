@@ -59,6 +59,18 @@ func (r TimeRange) IncludesValue(t uint64) bool {
 	return t < r.End
 }
 
+// includesRange reports whether every timestamp in other also falls within r.
+func (r TimeRange) includesRange(other TimeRange) bool {
+	if other.Start < r.Start {
+		return false
+	}
+	if r.Open {
+		return true
+	}
+	// r closed: other must also be closed (else other extends past r).
+	return !other.Open && other.End <= r.End
+}
+
 // Intersect returns the intersection of r and other, or ErrEmptyGrouping if
 // the result would be empty.
 func (r TimeRange) Intersect(other TimeRange) (TimeRange, error) {

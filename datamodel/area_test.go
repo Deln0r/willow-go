@@ -8,9 +8,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/Deln0r/willow-go/encoding"
 )
 
 func TestPath_IsEmpty(t *testing.T) {
@@ -346,6 +349,76 @@ func TestArea_EncodeRelativeTo_PanicsOnNonInclusion(t *testing.T) {
 	rel := Area{Subspace: nil, PathPrefix: pathOf(t, "folder"), Times: FullTimeRange()}
 	target := Area{Subspace: nil, PathPrefix: pathOf(t, "other"), Times: FullTimeRange()}
 	_ = target.EncodeRelativeTo(rel)
+}
+
+// TestDecodeAreaRelativeTo_Containment covers the checks that keep the
+// decoder from producing an area outside rel. The rejected shapes are the
+// ones the upstream EncodeAreaInArea negative vectors exercise.
+func TestDecodeAreaRelativeTo_Containment(t *testing.T) {
+	t.Parallel()
+	sub := bytes.Repeat([]byte{7}, 4)
+	otherSub := bytes.Repeat([]byte{8}, 4)
+	prefix := pathOf(t, "folder")
+	closedTimes, _ := NewTimeRangeClosed(100, 200)
+	closedRel := Area{PathPrefix: prefix, Times: closedTimes}
+	openRel := Area{PathPrefix: prefix, Times: NewTimeRangeOpen(10)}
+	subRel := Area{Subspace: &sub, PathPrefix: prefix, Times: FullTimeRange()}
+	noSuffix := prefix.EncodeExtending(prefix)
+
+	// encode builds header flags, the tagged time differences, an optional
+	// explicit subspace, and an empty path suffix.
+	encode := func(flags uint8, subspace []byte, startDiff uint64, endDiff *uint64) []byte {
+		header := encoding.WriteTag(flags, 2, 4, startDiff)
+		if endDiff != nil {
+			header = encoding.WriteTag(header, 2, 6, *endDiff)
+		}
+		out := append([]byte{header}, subspace...)
+		out = encoding.AppendCU64(out, startDiff, 2)
+		if endDiff != nil {
+			out = encoding.AppendCU64(out, *endDiff, 2)
+		}
+		return append(out, noSuffix...)
+	}
+	u := func(v uint64) *uint64 { return &v }
+
+	const (
+		subspaceBit       = 0b1000_0000
+		openBit           = 0b0100_0000
+		startFromStartBit = 0b0010_0000
+		endFromStartBit   = 0b0001_0000
+	)
+
+	cases := []struct {
+		name   string
+		rel    Area
+		src    []byte
+		wantOK bool
+	}{
+		{"closed inside closed rel", closedRel, encode(startFromStartBit|endFromStartBit, nil, 10, u(50)), true},
+		{"open range inside closed rel", closedRel, encode(openBit|startFromStartBit, nil, 10, nil), false},
+		{"end past closed rel", closedRel, encode(startFromStartBit|endFromStartBit, nil, 10, u(150)), false},
+		{"start overflow", openRel, encode(openBit|startFromStartBit, nil, math.MaxUint64, nil), false},
+		{"end overflow", openRel, encode(startFromStartBit|endFromStartBit, nil, 0, u(math.MaxUint64)), false},
+		{"end_from_start on open range", openRel, encode(openBit|startFromStartBit|endFromStartBit, nil, 0, nil), false},
+		{"explicit subspace equal to rel's", subRel, encode(subspaceBit|openBit|startFromStartBit, sub, 0, nil), true},
+		{"explicit subspace differs from rel's", subRel, encode(subspaceBit|openBit|startFromStartBit, otherSub, 0, nil), false},
+	}
+	for _, c := range cases {
+		got, n, err := DecodeAreaRelativeTo(testLimits, c.rel, len(sub), c.src)
+		if !c.wantOK {
+			if err == nil {
+				t.Errorf("%s: decoded %+v, want an error", c.name, got)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+		if n != len(c.src) || !c.rel.includesArea(got) {
+			t.Errorf("%s: consumed %d of %d, included in rel: %v", c.name, n, len(c.src), c.rel.includesArea(got))
+		}
+	}
 }
 
 func TestArea_AsRange3d(t *testing.T) {
