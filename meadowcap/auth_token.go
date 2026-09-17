@@ -42,9 +42,13 @@ func NewAuthorisationToken(
 // t.Signature must be a valid Ed25519 signature by the capability's
 // effective receiver over the entry's canonical encoding.
 //
-// Returns nil on success; otherwise ErrCapabilityRejectsEntry,
-// ErrInvalidSignature, or ErrDelegationSignature as appropriate.
+// Returns nil on success; otherwise ErrNamespaceNotCommunal,
+// ErrCapabilityRejectsEntry, ErrInvalidSignature, or ErrDelegationSignature
+// as appropriate.
 func (t AuthorisationToken) Verify(entry datamodel.Entry) error {
+	if !IsCommunal(t.Capability.NamespaceKey) {
+		return ErrNamespaceNotCommunal
+	}
 	if !t.Capability.IsValid() {
 		return ErrDelegationSignature
 	}

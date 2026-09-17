@@ -37,7 +37,7 @@ func subspaceArea(t *testing.T, subspace []byte, pathPrefix datamodel.Path, time
 
 func TestDelegation_AppendThenValid(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	delegatePub, _ := makeKeypair(t)
 
@@ -66,7 +66,7 @@ func TestDelegation_AppendThenValid(t *testing.T) {
 
 func TestDelegation_MultiStepChain(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	bobPub, bobPriv := makeKeypair(t)
 	carolPub, _ := makeKeypair(t)
@@ -98,7 +98,7 @@ func TestDelegation_MultiStepChain(t *testing.T) {
 
 func TestDelegation_RejectsAreaNotIncluded(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	otherPub, _ := makeKeypair(t)
 	delegatePub, _ := makeKeypair(t)
@@ -118,7 +118,7 @@ func TestDelegation_RejectsAreaNotIncluded(t *testing.T) {
 
 func TestDelegation_RejectsWrongPrivateKey(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, _ := makeKeypair(t)
 	_, attackerPriv := makeKeypair(t)
 	delegatePub, _ := makeKeypair(t)
@@ -137,7 +137,7 @@ func TestDelegation_RejectsWrongPrivateKey(t *testing.T) {
 
 func TestDelegation_TamperedSignatureRejected(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	delegatePub, _ := makeKeypair(t)
 
@@ -159,7 +159,7 @@ func TestDelegation_TamperedSignatureRejected(t *testing.T) {
 
 func TestDelegation_TamperedDelegationAreaRejected(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	delegatePub, _ := makeKeypair(t)
 
@@ -181,7 +181,7 @@ func TestDelegation_TamperedDelegationAreaRejected(t *testing.T) {
 
 func TestAuthorisationToken_WithDelegatedCap(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	delegatePub, delegatePriv := makeKeypair(t)
 
@@ -211,7 +211,7 @@ func TestAuthorisationToken_WithDelegatedCap(t *testing.T) {
 
 func TestAuthorisationToken_RejectsSignatureByOldReceiver(t *testing.T) {
 	t.Parallel()
-	nsPub, _ := makeKeypair(t)
+	nsPub := makeCommunalNamespace(t)
 	rootPub, rootPriv := makeKeypair(t)
 	delegatePub, _ := makeKeypair(t)
 

@@ -80,10 +80,15 @@ func areaFromHandoverJSON(t *testing.T, j handoverAreaJSON) datamodel.Area {
 // chunk 10. The Rust harness builds delegation chains using
 // `meadowcap::WriteCapability::delegate`, which signs over the spec-defined
 // handover bytes computed by `create_handover`. We reconstruct each chain
-// here and call IsValid; success means our handoverBytesAt produces
+// here and verify it; success means our handoverBytesAt produces
 // byte-identical output to upstream's create_handover (signatures are over
 // these bytes; if our computation diverged, the signatures would fail to
 // verify here).
+//
+// The fixtures predate willow_rs 0.7.3, which started rejecting communal
+// capabilities in owned namespaces. Two of the four chains are rooted in
+// namespace keys that Willow'25 classifies as owned: their signatures still
+// pin the handover bytes, and IsValid must reject them.
 func TestDelegation_InteropFixtures(t *testing.T) {
 	t.Parallel()
 	raw, err := os.ReadFile(filepath.Join("..", "testdata", "meadowcap", "delegation_chains.json"))
@@ -113,10 +118,8 @@ func TestDelegation_InteropFixtures(t *testing.T) {
 			if c.AccessMode == 0 {
 				mode = AccessModeRead
 			}
-			cap, err := NewCommunal(mode, nsKey, userKey)
-			if err != nil {
-				t.Fatalf("NewCommunal: %v", err)
-			}
+			// A literal, because NewCommunal refuses owned namespace keys.
+			cap := CommunalCapability{Mode: mode, NamespaceKey: nsKey, UserKey: userKey}
 
 			for i, step := range c.Delegations {
 				newArea := areaFromHandoverJSON(t, step.NewArea)
@@ -135,8 +138,12 @@ func TestDelegation_InteropFixtures(t *testing.T) {
 				})
 			}
 
-			if !cap.IsValid() {
-				t.Errorf("Rust-built chain failed IsValid in Go — handover bytes diverge")
+			if !cap.chainIsValid() {
+				t.Errorf("Rust-built chain failed to verify in Go: handover bytes diverge")
+			}
+			communal := nsKey[len(nsKey)-1]&1 == 0
+			if got := cap.IsValid(); got != communal {
+				t.Errorf("IsValid = %v, want %v (whether the namespace is communal)", got, communal)
 			}
 		})
 	}

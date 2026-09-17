@@ -26,6 +26,19 @@ func makeKeypair(t *testing.T) (ed25519.PublicKey, ed25519.PrivateKey) {
 	return pub, priv
 }
 
+// makeCommunalNamespace returns a random namespace key that Willow'25
+// classifies as communal (see IsCommunal). Communal capabilities never use
+// the namespace secret, so only the public key is returned.
+func makeCommunalNamespace(t *testing.T) ed25519.PublicKey {
+	t.Helper()
+	for {
+		pub, _ := makeKeypair(t)
+		if IsCommunal(pub) {
+			return pub
+		}
+	}
+}
+
 func makeEntry(t *testing.T, ns, sub []byte, comps []string, ts uint64, plen uint64, digest []byte) datamodel.Entry {
 	t.Helper()
 	byteComps := make([][]byte, len(comps))
@@ -48,7 +61,7 @@ func makeEntry(t *testing.T, ns, sub []byte, comps []string, ts uint64, plen uin
 
 func TestNewCommunal_KeyValidation(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, _ := makeKeypair(t)
 
 	if _, err := NewCommunal(AccessModeWrite, ns, user); err != nil {
@@ -62,9 +75,45 @@ func TestNewCommunal_KeyValidation(t *testing.T) {
 	}
 }
 
+func TestIsCommunal(t *testing.T) {
+	t.Parallel()
+	// The keys willow_rs uses to document NamespaceId::is_communal.
+	if !IsCommunal(bytes.Repeat([]byte{16}, ed25519.PublicKeySize)) {
+		t.Error("[16; 32] should be communal")
+	}
+	if IsCommunal(bytes.Repeat([]byte{17}, ed25519.PublicKeySize)) {
+		t.Error("[17; 32] should be owned")
+	}
+	if IsCommunal(make([]byte, ed25519.PublicKeySize-1)) {
+		t.Error("a short key should not be communal")
+	}
+}
+
+func TestCommunalCapability_OwnedNamespace(t *testing.T) {
+	t.Parallel()
+	owned := ed25519.PublicKey(bytes.Repeat([]byte{17}, ed25519.PublicKeySize))
+	user, userPriv := makeKeypair(t)
+
+	if _, err := NewCommunal(AccessModeWrite, owned, user); !errors.Is(err, ErrNamespaceNotCommunal) {
+		t.Errorf("NewCommunal: got %v, want ErrNamespaceNotCommunal", err)
+	}
+
+	// A struct literal skips the constructor, so IsValid and Verify must
+	// refuse the capability on their own.
+	cap := CommunalCapability{Mode: AccessModeWrite, NamespaceKey: owned, UserKey: user}
+	if cap.IsValid() {
+		t.Error("a communal capability in an owned namespace must not be valid")
+	}
+	entry := makeEntry(t, owned, user, []string{"a"}, 1, 0, make([]byte, 32))
+	token := AuthorisationToken{Capability: cap, Signature: ed25519.Sign(userPriv, entry.Encode())}
+	if err := token.Verify(entry); !errors.Is(err, ErrNamespaceNotCommunal) {
+		t.Errorf("Verify: got %v, want ErrNamespaceNotCommunal", err)
+	}
+}
+
 func TestCommunalCapability_DefensiveCopy(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, _ := makeKeypair(t)
 	cap, err := NewCommunal(AccessModeWrite, ns, user)
 	if err != nil {
@@ -80,9 +129,9 @@ func TestCommunalCapability_DefensiveCopy(t *testing.T) {
 
 func TestCommunalCapability_IncludesEntry(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, _ := makeKeypair(t)
-	otherNs, _ := makeKeypair(t)
+	otherNs := makeCommunalNamespace(t)
 	otherUser, _ := makeKeypair(t)
 
 	cap, err := NewCommunal(AccessModeWrite, ns, user)
@@ -108,7 +157,7 @@ func TestCommunalCapability_IncludesEntry(t *testing.T) {
 
 func TestCommunalCapability_GrantedArea(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, _ := makeKeypair(t)
 	cap, _ := NewCommunal(AccessModeWrite, ns, user)
 
@@ -126,7 +175,7 @@ func TestCommunalCapability_GrantedArea(t *testing.T) {
 
 func TestAuthorisationToken_HappyPath(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, userPriv := makeKeypair(t)
 	cap, _ := NewCommunal(AccessModeWrite, ns, user)
 
@@ -144,7 +193,7 @@ func TestAuthorisationToken_HappyPath(t *testing.T) {
 
 func TestAuthorisationToken_RejectsOutOfScopeEntry(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, userPriv := makeKeypair(t)
 	otherUser, _ := makeKeypair(t)
 	cap, _ := NewCommunal(AccessModeWrite, ns, user)
@@ -160,7 +209,7 @@ func TestAuthorisationToken_RejectsOutOfScopeEntry(t *testing.T) {
 
 func TestAuthorisationToken_RejectsForgedSignature(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, _ := makeKeypair(t)
 	_, attackerPriv := makeKeypair(t)
 	cap, _ := NewCommunal(AccessModeWrite, ns, user)
@@ -179,7 +228,7 @@ func TestAuthorisationToken_RejectsForgedSignature(t *testing.T) {
 
 func TestAuthorisationToken_RejectsTamperedEntry(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, userPriv := makeKeypair(t)
 	cap, _ := NewCommunal(AccessModeWrite, ns, user)
 
@@ -200,7 +249,7 @@ func TestAuthorisationToken_RejectsTamperedEntry(t *testing.T) {
 
 func TestAuthorisationToken_RejectsShortSignature(t *testing.T) {
 	t.Parallel()
-	ns, _ := makeKeypair(t)
+	ns := makeCommunalNamespace(t)
 	user, userPriv := makeKeypair(t)
 	cap, _ := NewCommunal(AccessModeWrite, ns, user)
 

@@ -38,7 +38,17 @@ var (
 	ErrInvalidSignature       = errors.New("meadowcap: invalid signature")
 	ErrInvalidNamespaceKey    = errors.New("meadowcap: namespace key wrong length")
 	ErrInvalidUserKey         = errors.New("meadowcap: user key wrong length")
+	ErrNamespaceNotCommunal   = errors.New("meadowcap: namespace key identifies an owned namespace")
 )
+
+// IsCommunal reports whether namespaceKey identifies a communal namespace.
+// Willow'25 instantiates Meadowcap's is_communal as "the least significant
+// bit is 0", which willow_rs reads as the low bit of the final key byte. A
+// communal capability rooted in any other namespace key is invalid, see
+// https://willowprotocol.org/specs/meadowcap/index.html#is_communal.
+func IsCommunal(namespaceKey ed25519.PublicKey) bool {
+	return len(namespaceKey) == ed25519.PublicKeySize && namespaceKey[ed25519.PublicKeySize-1]&1 == 0
+}
 
 // CommunalCapability is a Meadowcap capability rooted in a communal genesis.
 // A communal genesis binds a user_key to a subspace within a namespace; the
@@ -68,13 +78,17 @@ type Delegation struct {
 }
 
 // NewCommunal returns a new communal capability with no delegations.
-// Returns an error if either key has the wrong length for Ed25519.
+// Returns an error if either key has the wrong length for Ed25519, or
+// ErrNamespaceNotCommunal if namespaceKey identifies an owned namespace.
 func NewCommunal(mode AccessMode, namespaceKey, userKey ed25519.PublicKey) (CommunalCapability, error) {
 	if len(namespaceKey) != ed25519.PublicKeySize {
 		return CommunalCapability{}, ErrInvalidNamespaceKey
 	}
 	if len(userKey) != ed25519.PublicKeySize {
 		return CommunalCapability{}, ErrInvalidUserKey
+	}
+	if !IsCommunal(namespaceKey) {
+		return CommunalCapability{}, ErrNamespaceNotCommunal
 	}
 	return CommunalCapability{
 		Mode:         mode,

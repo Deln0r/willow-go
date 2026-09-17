@@ -67,10 +67,17 @@ func (c *CommunalCapability) AppendDelegation(
 }
 
 // IsValid reports whether c is a structurally and cryptographically valid
-// capability: each delegation's Area is included in the previous granted
-// area, and each delegation's Signature verifies under the previous
-// receiver's public key over the canonical handover bytes.
+// capability: the namespace is communal (see IsCommunal), each delegation's
+// Area is included in the previous granted area, and each delegation's
+// Signature verifies under the previous receiver's public key over the
+// canonical handover bytes.
 func (c CommunalCapability) IsValid() bool {
+	return IsCommunal(c.NamespaceKey) && c.chainIsValid()
+}
+
+// chainIsValid checks key lengths and the delegation chain (area inclusion
+// and handover signatures), without the namespace kind check.
+func (c CommunalCapability) chainIsValid() bool {
 	if len(c.NamespaceKey) != ed25519.PublicKeySize || len(c.UserKey) != ed25519.PublicKeySize {
 		return false
 	}

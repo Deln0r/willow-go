@@ -68,8 +68,22 @@ func main() {
 	}
 }
 
+// generateCommunalNamespace draws Ed25519 keys until one identifies a
+// communal namespace (see meadowcap.IsCommunal); about half of all keys do.
+func generateCommunalNamespace() (ed25519.PublicKey, error) {
+	for {
+		pub, _, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+		if meadowcap.IsCommunal(pub) {
+			return pub, nil
+		}
+	}
+}
+
 func runGen(count int, tag string, out io.Writer) error {
-	nsPub, _, err := ed25519.GenerateKey(rand.Reader)
+	nsPub, err := generateCommunalNamespace()
 	if err != nil {
 		return err
 	}
