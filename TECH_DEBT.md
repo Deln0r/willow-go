@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 13 August 2026.
+Last updated: 17 September 2026.
 
 ---
 
@@ -211,18 +211,11 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 - **Impact:** Minor ergonomics. Anyone reading meadowcap tests sees direct `ed25519.GenerateKey` calls.
 - **Revisit:** Add `RandomNamespace()` / `RandomSubspace()` wrappers when a public-API consumer needs them.
 
-### Upstream willow_test_vectors: relative-encoding adoption blocked
+### Upstream willow_test_vectors: sets we do not exercise
 
-- **Origin:** Discovered `github.com/worm-blossom/willow_test_vectors` and added as a git submodule at `testdata/upstream_vectors/`. Absolute path encodings (encode_path + EncodePath) adopted successfully — 11 positive + 165 attacker-supplied negative vectors pass; the negative-test pass found and fixed one panic-level bug in `datamodel/paths.go` decodeComponents (uint64 → int conversion without bounds check on attacker-supplied huge length64). Relative encodings (path_rel_path, EncodePathRelativePath, path_extends_path, EncodePathExtendsPath) **DO NOT** match our impl OR willow_rs v0.7.0 OR the spec text on willowprotocol.org as of May 2026.
-- **Why deferred:** The upstream `reencoded/` files for relative path encodings show a canonical form that neither matches the documented prefix-count rule nor what willow_rs v0.7.0 emits. Per direct communication with the worm-blossom team (May 2026), some upstream test vectors are out of date because the encodings have changed since they were generated; the spec always trumps the test vectors. Without authoritative documentation of the new canonical rule, aligning our impl is speculative and would break our existing byte-compat claim vs willow_rs.
-- **Impact:** Only 11/108 positive vectors and 165/2453 negative vectors are exercised. The remaining ~92 yay and ~2300 nay cover the encodings we cannot align without spec clarification.
-- **Revisit:** When (a) willow_rs HEAD progresses past dd87996 with new encoder logic that matches the test_vectors, OR (b) the spec text on willowprotocol.org is updated to document the new canonical rule, OR (c) maintainers respond with clarification. Plan: reintroduce runners for the relative-encoding vector files, fix any divergences, and commit a new pin.
-
-### Upstream willow_test_vectors: capability + 3dRange encodings
-
-- **Origin:** Among the 16 upstream encoding directories, several depend on encoders we have not implemented at all: EncodeCommunalCapability + EncodeOwnedCapability + EncodeMcCapability (need spec-compliant byte encoding of capabilities, currently we only have signature semantics), Encode3dRangeRelative3dRange (need 3dRange byte encoding, currently absent), EncodeEntryInNamespace3dRange (depends on 3dRange).
+- **Origin:** The regenerated Codeberg corpus (submodule pin `68117e0b`, 2 September 2026) is counted at 10,170 vectors by `TestUpstream_CoverageSummary`, which prints the per-set inventory; 2,725 of them are exercised. The rest need types or encodings we have not implemented: capabilities and authorisation tokens (EncodeMcCapability_1/_2, encode_mc_capability_1/_2, EncodeMeadowcapAuthorisationToken, EncodeMeadowcapAuthorisationTokenRelative, EncodeMeadowcapAuthorisedEntry), private area and private path encodings (EncodePrivateAreaAlmostInArea, EncodePrivatePathExtendsPath), Range3d and absolute Area encodings (Encode3dRange, encode_3d_range, EncodeArea, encode_area; the last two only check the test-only reference decoder), EncodeEntryInNamespaceArea, id codecs, the id and payload digest orderings, `Path.successor` / `predecessor` / `append`, and `store_pruning`, whose inputs are authorised entries.
 - **Why deferred:** These encodings are used by Confidential Sync, which is Phase 2. Implementing them in pre-MVP would be premature scope creep.
-- **Impact:** ~30 positive vectors + ~1200 negative vectors not exercised.
+- **Impact:** 7,003 upstream vectors (excluding the reference-decoder check) are not exercised. Store pruning semantics are still covered through the entry_is_newer_than, entry_prunes and entry_is_pruned_by predicate sets.
 - **Revisit:** Phase 2 alongside Confidential Sync.
 
 ### Path `Hash` implementation
@@ -268,6 +261,11 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 - **Closed by:** native `testing.F` fuzz targets on main (June 2026).
 - **Resolution:** Added `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), each seeded from existing fixtures. Targets assert the decoders never panic on attacker-supplied input, report a consumed length within bounds, respect the configured limits, and satisfy encode-idempotence. A CI step runs each target for 20s on every push. Writing the path targets immediately surfaced that the byte-for-byte round-trip assumption is wrong for the lenient decoder (it accepts non-minimal encodings), so the invariant was tightened to `Decode(Encode(p))` equality rather than input-byte equality. This is the same class of input as the 2^64-1 component-length panic the upstream negative vectors found, now under continuous fuzzing.
+
+### Upstream willow_test_vectors: relative path encodings (formerly "relative-encoding adoption blocked")
+
+- **Closed by:** the move to the Codeberg corpus (September 2026).
+- **Resolution:** Until August 2026 the upstream `reencoded/` files for path_rel_path, EncodePathRelativePath, path_extends_path and EncodePathExtendsPath disagreed with willow_rs v0.7.0 and with the spec text, so those runners were left out. worm-blossom archived the GitHub repository in August 2026 and regenerated the corpus on Codeberg with a `codec/` + `data_model/` layout. Against that corpus the existing encoders and decoders pass all four relative path sets (287 yay + 436 nay) without changes, so the runners are back, together with entries, area-in-area, and the entry and path predicates and operators. The same corpus found one decoder bug: `DecodeAreaRelativeTo` accepted three EncodeAreaInArea negative vectors that decode to areas outside the reference area, now rejected.
 
 ### path_extends_path encoding
 

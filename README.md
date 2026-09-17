@@ -18,25 +18,25 @@ A pure-Go implementation of the [Willow Protocol](https://willowprotocol.org).
 
 ## How to read this
 
-This README claims a lot of green ticks; treat the [Status](#status) table as the source of truth. "Stable" means the byte format matches [willow_rs](https://codeberg.org/worm-blossom/willow_rs) v0.7.0 fixtures and the official [willow_test_vectors](https://github.com/worm-blossom/willow_test_vectors) where their reencoded files agree with the spec. "Partial" means the encoder is in place but parts of the cross-impl corpus are deferred — usually because the upstream vectors and the spec text on willowprotocol.org currently disagree. "Phase 2" means not implemented yet.
+This README claims a lot of green ticks; treat the [Status](#status) table as the source of truth. "Stable" means the byte format matches [willow_rs](https://codeberg.org/worm-blossom/willow_rs) v0.7.0 fixtures and the official [willow_test_vectors](https://codeberg.org/worm-blossom/willow_test_vectors) for every set this port implements. "Phase 2" means not implemented yet.
 
 If you are evaluating this for a production dependency: the data model, capabilities, and Willow'25 bundle are usable today; Confidential Sync (the protocol formerly called WGPS) is not. See the [Phase 2 roadmap](#phase-2-roadmap).
 
 ## Status
 
-Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference + against the upstream `willow_test_vectors` corpus where the published spec is settled. Confidential Sync is the explicit next phase — see the roadmap below.
+Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-step delegation chains), and the Willow'25 parameter bundle are complete and validated byte-for-byte against the Rust reference and against the upstream `willow_test_vectors` corpus for every encoding they implement. Confidential Sync is the explicit next phase — see the roadmap below.
 
 | Component | Status | Cross-impl evidence | Source |
 | --- | --- | --- | --- |
 | CompactU64 codec | Stable | 4-bit packed + 8-bit standalone, unit-tested | [`encoding/`](encoding/) |
-| Paths (absolute) | Stable | 11 yay + 165 nay upstream vectors pass | [`datamodel/paths.go`](datamodel/paths.go) |
-| Paths (relative / extends) | Partial | Encoder + decoder ship; upstream `reencoded/` deferred pending spec / willow_rs realignment | [`datamodel/paths.go`](datamodel/paths.go) |
-| Entries | Stable | 10 fixtures byte-identical vs willow_rs v0.7.0 | [`datamodel/entry.go`](datamodel/entry.go) |
-| Areas (incl. area-in-area) | Stable | 8 fixtures byte-identical | [`datamodel/area.go`](datamodel/area.go) |
+| Paths (absolute) | Stable | 159 yay + 256 nay upstream codec vectors and 363 path predicate / operator vectors pass | [`datamodel/paths.go`](datamodel/paths.go) |
+| Paths (relative / extends) | Stable | 17 fixtures byte-identical; 287 yay + 436 nay upstream vectors pass | [`datamodel/paths.go`](datamodel/paths.go) |
+| Entries | Stable | 10 fixtures byte-identical vs willow_rs v0.7.0; 214 yay + 198 nay upstream vectors pass | [`datamodel/entry.go`](datamodel/entry.go) |
+| Areas (incl. area-in-area) | Stable | 8 fixtures byte-identical; 197 yay + 303 nay upstream area-in-area vectors pass | [`datamodel/area.go`](datamodel/area.go) |
 | Range3d / groupings | Stable | Unit-tested | [`datamodel/groupings.go`](datamodel/groupings.go) |
-| In-memory Store | Stable | Prefix-pruning + concurrent access | [`datamodel/store.go`](datamodel/store.go) |
+| In-memory Store | Stable | Prefix-pruning + concurrent access; 312 upstream newer-than / prunes vectors pass | [`datamodel/store.go`](datamodel/store.go) |
 | Persistent Store | Phase 2 | — | — |
-| Meadowcap communal capabilities | Stable | 4 Ed25519 delegation chains signed by willow_rs verify | [`meadowcap/`](meadowcap/) |
+| Meadowcap communal capabilities | Stable | Handover bytes match 4 Ed25519 delegation chains signed by willow_rs; Willow'25 `is_communal` enforced | [`meadowcap/`](meadowcap/) |
 | Meadowcap owned / read capabilities | Phase 2 | — | — |
 | WILLIAM3 payload digest | Stable | 11 digest fixtures + 18 upstream `william3vectors.txt` cases match bab_rs 0.8.0 | [`willow25/william3.go`](willow25/william3.go) |
 | Willow'25 parameter bundle | Stable | 4096/4096/4096 limits, 32-byte ids | [`willow25/willow25.go`](willow25/willow25.go) |
@@ -45,7 +45,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
-54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). 4 Meadowcap delegation chains signed by willow_rs verify under our Go IsValid. 176 additional vectors from the official upstream `willow_test_vectors` corpus (11 positive + 165 attacker-supplied negative cases for absolute path encodings) pass; the negative-test pass already found and fixed one panic-level bug in our decoder. 83 test functions (204 runs including subtests) across the 6 packages with test files.
+54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 2,725 vectors from the official upstream `willow_test_vectors` corpus pass: 2,050 codec vectors (857 that must decode, 1,193 attacker-supplied ones that must be rejected) for path, entry and area-in-area encodings, and 675 data-model predicate and operator vectors. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 88 test functions (229 runs including subtests) across the 6 packages with test files.
 
 ## Goals
 
@@ -146,7 +146,7 @@ testdata/william3/william3vectors.txt                          - 18 cases (verba
 testdata/meadowcap/delegation_chains.json                      - 4 cases (Ed25519 signed)
 ```
 
-**B. Official upstream `willow_test_vectors` (176 vectors currently exercised)** — pulled in as a git submodule under `testdata/upstream_vectors/`. The submodule is checked out automatically by CI; locally you initialize it once with `git submodule update --init`. Adoption is in progress: absolute path encodings pass (encode_path + EncodePath = 11 positive + 165 negative cases). Relative encodings (path_rel_path, EncodePathRelativePath, path_extends_path, EncodePathExtendsPath) are deferred pending spec / willow_rs / test_vectors realignment — the upstream reencoded/ files differ from both willow_rs v0.7.0 and the spec text on willowprotocol.org as of May 2026. See [TECH_DEBT.md](TECH_DEBT.md) for the full audit.
+**B. Official upstream `willow_test_vectors` (2,725 vectors exercised).** Pulled in as a git submodule under `testdata/upstream_vectors/`, tracking the [Codeberg repository](https://codeberg.org/worm-blossom/willow_test_vectors) (the GitHub copy was archived in August 2026). CI checks it out automatically; locally you initialize it once with `git submodule update --init`. Exercised sets: EncodePath, encode_path, EncodeEntry, encode_entry, EncodePathExtendsPath, path_extends_path, EncodePathRelativePath, path_rel_path, EncodeAreaInArea, encode_area_in_area, and the entry and path predicates and operators. Not exercised: the capability, authorisation token, private area, Range3d and store pruning sets, which need encodings this port does not implement yet (see [TECH_DEBT.md](TECH_DEBT.md)). `go test -v -run TestUpstream_CoverageSummary ./datamodel/` prints the per-set inventory.
 
 ```sh
 $ make smoketest

@@ -42,7 +42,7 @@ testdata/
   _genfixtures/       Rust harness that generates the fixtures (see below)
   paths/ paths_rel/ entries/ areas/ william3/ meadowcap/   committed fixtures
   william3/william3vectors.txt   verbatim upstream WILLIAM3 vectors (bab_rs 0.8.0)
-  upstream_vectors/   git submodule: worm-blossom/willow_test_vectors
+  upstream_vectors/   git submodule: codeberg.org/worm-blossom/willow_test_vectors
 ```
 
 ## Everyday commands
