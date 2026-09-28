@@ -13,9 +13,34 @@ import (
 	"github.com/Deln0r/willow-go/willow25"
 )
 
+func ExampleGenerateCommunalNamespace() {
+	// Only about half of all Ed25519 keys identify a communal namespace, so
+	// the namespace key comes from GenerateCommunalNamespace rather than
+	// ed25519.GenerateKey. Nil selects a secure random source.
+	nsPub, _, err := meadowcap.GenerateCommunalNamespace(nil)
+	if err != nil {
+		panic(err)
+	}
+	userPub, _, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	writeCap, err := meadowcap.NewCommunal(meadowcap.AccessModeWrite, nsPub, userPub)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("communal:", meadowcap.IsCommunal(nsPub))
+	fmt.Println("valid:", writeCap.IsValid())
+	// Output:
+	// communal: true
+	// valid: true
+}
+
 func ExampleCommunalCapability_AppendDelegation() {
 	// Deterministic keys from fixed seeds for a reproducible example. Real
-	// code must use crypto/rand.
+	// code must use crypto/rand, and GenerateCommunalNamespace for the
+	// namespace key.
 	nsPub := ed25519.NewKeyFromSeed(bytes.Repeat([]byte{1}, ed25519.SeedSize)).Public().(ed25519.PublicKey)
 	userPriv := ed25519.NewKeyFromSeed(bytes.Repeat([]byte{2}, ed25519.SeedSize))
 	userPub := userPriv.Public().(ed25519.PublicKey)

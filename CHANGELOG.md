@@ -23,13 +23,14 @@
 - `willow-cli` unit tests and README usage section. Hex arguments now tolerate a leading `0x` and internal whitespace, odd-length hex gives a specific error, and decode reports trailing bytes that are not part of the encoding.
 - Upstream test vector runners for entries (EncodeEntry, encode_entry), relative paths (EncodePathExtendsPath, path_extends_path, EncodePathRelativePath, path_rel_path), area-in-area (EncodeAreaInArea, encode_area_in_area), and the entry and path predicates and operators (newer-than, prunes, prefix relations, ordering, longest common prefix, greater-but-not-prefixed). 2,725 upstream vectors are exercised, up from 176.
 - `meadowcap.IsCommunal` and `meadowcap.ErrNamespaceNotCommunal`.
+- `meadowcap.GenerateCommunalNamespace`, the counterpart of willow_rs `randomly_generate_communal_namespace`: it draws Ed25519 key pairs until the public key identifies a communal namespace, with a runnable example. `cmd/willow-sync-demo` and the meadowcap tests use it instead of their own loops.
 
 ### Changed
 - Android AAR verified end-to-end: `gomobile bind` builds all four ABIs (arm64-v8a, armeabi-v7a, x86, x86_64) on NDK 27 + OpenJDK 26, `classes.jar` exposes the mobile API and each ABI ships `libgojni.so`. README `mobile/Android` Status row moved to "Stable" with that evidence, and the Makefile `mobile-android` target now builds the full ABI set instead of arm64 only.
 - CI: `actions/checkout` and `actions/setup-go` bumped to v7 (Dependabot).
 - Dropped the Go Report Card badge: goreportcard.com is sunsetting, so the badge and its report link no longer resolve.
 - The `testdata/upstream_vectors` submodule now tracks codeberg.org/worm-blossom/willow_test_vectors at `68117e0b` (2 September 2026). worm-blossom archived the GitHub copy in August 2026 and regenerated the corpus with a `codec/` + `data_model/` layout. The relative path vectors that used to disagree with willow_rs now match this implementation unchanged, so relative path encodings are no longer listed as deferred.
-- `NewCommunal` returns `ErrNamespaceNotCommunal` for namespace keys that identify owned namespaces. Code that draws namespace keys at random has to draw until `IsCommunal` holds (about one key in two), as `cmd/willow-sync-demo` now does.
+- `NewCommunal` returns `ErrNamespaceNotCommunal` for namespace keys that identify owned namespaces. Code that draws namespace keys at random has to draw until `IsCommunal` holds (about one key in two), which `GenerateCommunalNamespace` does.
 
 ### Fixed
 - Communal capabilities in owned namespaces were accepted. Meadowcap only admits a communal capability when `is_communal` holds for its namespace key, which Willow'25 defines as the least significant bit being 0; `IsValid` and `AuthorisationToken.Verify` now enforce this, as willow_rs does since 0.7.3. Two of the four willow_rs-signed delegation chain fixtures are rooted in owned namespace keys: their signatures still verify, and the interop test now also checks that `IsValid` rejects them.
@@ -39,7 +40,7 @@
 - Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
 - staticcheck S1038 cleanup in `datamodel/upstream_vectors_test.go` (`t.Logf` instead of `t.Log(fmt.Sprintf(...))`) and the now-unused `fmt` import dropped.
 - Stale package documentation: `meadowcap` claimed communal capabilities only with "no delegation chains" and that Area relative encoding was unimplemented (both have shipped since), and `willow25` described the payload digest as BLAKE3 when it is WILLIAM3 (BLAKE3's compression with a substituted IV, and the blake3 dependency is long gone).
-- README test counts refreshed after the CLI, property, fuzz, and example tests landed, and again after the upstream corpus update: 88 test functions across 6 packages (229 runs including subtests).
+- README test counts refreshed after the CLI, property, fuzz, and example tests landed, and again after the upstream corpus update and the key generation helper: 91 test functions across 6 packages (233 runs including subtests).
 
 ### Documentation
 - Noted in `TECH_DEBT.md` that willow_rs 0.7.0 removed the `willow_data_model` and `meadowcap` crates the fixture harness pins. The harness pins a commit SHA and still builds, so nothing changes today, but the regeneration path is frozen until the harness is replaced by a Go generator.

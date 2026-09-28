@@ -8,6 +8,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/Deln0r/willow-go/datamodel"
@@ -31,12 +32,22 @@ func makeKeypair(t *testing.T) (ed25519.PublicKey, ed25519.PrivateKey) {
 // the namespace secret, so only the public key is returned.
 func makeCommunalNamespace(t *testing.T) ed25519.PublicKey {
 	t.Helper()
-	for {
-		pub, _ := makeKeypair(t)
-		if IsCommunal(pub) {
-			return pub
-		}
+	pub, _, err := GenerateCommunalNamespace(rand.Reader)
+	if err != nil {
+		t.Fatalf("GenerateCommunalNamespace: %v", err)
 	}
+	return pub
+}
+
+// repeatingReader returns the same byte forever, so every Ed25519 seed read
+// from it is identical.
+type repeatingReader byte
+
+func (r repeatingReader) Read(p []byte) (int, error) {
+	for i := range p {
+		p[i] = byte(r)
+	}
+	return len(p), nil
 }
 
 func makeEntry(t *testing.T, ns, sub []byte, comps []string, ts uint64, plen uint64, digest []byte) datamodel.Entry {
@@ -86,6 +97,64 @@ func TestIsCommunal(t *testing.T) {
 	}
 	if IsCommunal(make([]byte, ed25519.PublicKeySize-1)) {
 		t.Error("a short key should not be communal")
+	}
+}
+
+func TestGenerateCommunalNamespace(t *testing.T) {
+	t.Parallel()
+	for _, random := range []io.Reader{nil, rand.Reader} {
+		pub, priv, err := GenerateCommunalNamespace(random)
+		if err != nil {
+			t.Fatalf("GenerateCommunalNamespace: %v", err)
+		}
+		if !IsCommunal(pub) {
+			t.Errorf("generated namespace key %x is not communal", pub)
+		}
+		if !bytes.Equal(priv.Public().(ed25519.PublicKey), pub) {
+			t.Error("private key does not belong to the public key")
+		}
+		user, _ := makeKeypair(t)
+		if _, err := NewCommunal(AccessModeWrite, pub, user); err != nil {
+			t.Errorf("NewCommunal with a generated namespace key: %v", err)
+		}
+	}
+}
+
+func TestGenerateCommunalNamespace_SkipsOwnedKeys(t *testing.T) {
+	t.Parallel()
+	ownedSeed := bytes.Repeat([]byte{3}, ed25519.SeedSize)
+	communalSeed := bytes.Repeat([]byte{1}, ed25519.SeedSize)
+	owned := ed25519.NewKeyFromSeed(ownedSeed).Public().(ed25519.PublicKey)
+	communal := ed25519.NewKeyFromSeed(communalSeed).Public().(ed25519.PublicKey)
+	if IsCommunal(owned) || !IsCommunal(communal) {
+		t.Fatal("test seeds no longer derive one owned and one communal key")
+	}
+
+	random := bytes.NewReader(append(append([]byte(nil), ownedSeed...), communalSeed...))
+	pub, _, err := GenerateCommunalNamespace(random)
+	if err != nil {
+		t.Fatalf("GenerateCommunalNamespace: %v", err)
+	}
+	if !bytes.Equal(pub, communal) {
+		t.Errorf("got key %x, want the second (communal) key %x", pub, communal)
+	}
+}
+
+func TestGenerateCommunalNamespace_BrokenSource(t *testing.T) {
+	t.Parallel()
+	// A source stuck on one seed that derives an owned key must end in an
+	// error instead of looping forever.
+	stuck := repeatingReader(3)
+	if IsCommunal(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{3}, ed25519.SeedSize)).Public().(ed25519.PublicKey)) {
+		t.Fatal("test seed no longer derives an owned key")
+	}
+	if _, _, err := GenerateCommunalNamespace(stuck); err == nil {
+		t.Error("a source stuck on an owned key: got no error")
+	}
+
+	// A source that fails reports the read error.
+	if _, _, err := GenerateCommunalNamespace(bytes.NewReader(nil)); !errors.Is(err, io.EOF) {
+		t.Errorf("an empty source: got %v, want io.EOF", err)
 	}
 }
 

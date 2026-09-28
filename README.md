@@ -45,7 +45,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
-54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 2,725 vectors from the official upstream `willow_test_vectors` corpus pass: 2,050 codec vectors (857 that must decode, 1,193 attacker-supplied ones that must be rejected) for path, entry and area-in-area encodings, and 675 data-model predicate and operator vectors. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 88 test functions (229 runs including subtests) across the 6 packages with test files.
+54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 2,725 vectors from the official upstream `willow_test_vectors` corpus pass: 2,050 codec vectors (857 that must decode, 1,193 attacker-supplied ones that must be rejected) for path, entry and area-in-area encodings, and 675 data-model predicate and operator vectors. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 91 test functions (233 runs including subtests) across the 6 packages with test files.
 
 ## Goals
 
@@ -122,7 +122,7 @@ func main() {
 | --- | --- | --- |
 | Data model | Paths, Entries, Range3d, Areas, Store | [`datamodel/`](datamodel/) |
 | Encoding | CompactU64, path encoding, path-extends-path, area-in-area | [`encoding/`](encoding/), [`datamodel/area.go`](datamodel/area.go) |
-| Capabilities | Communal write capability, multi-step Ed25519 delegation chains, AuthorisationToken | [`meadowcap/`](meadowcap/) |
+| Capabilities | Communal write capability, multi-step Ed25519 delegation chains, AuthorisationToken, communal namespace key generation | [`meadowcap/`](meadowcap/) |
 | Willow'25 | 4096/4096/4096 limits, WILLIAM3 payload digest, 32-byte ids, convenience constructors | [`willow25/`](willow25/) |
 | Mobile | gomobile-bindable API: PathBuilder, EntryBuilder, HashPayload | [`mobile/`](mobile/) |
 | Tooling | Read-only encode/decode inspector CLI, cross-impl smoketest CLI, end-to-end sync demo CLI | [`cmd/`](cmd/) |

@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 17 September 2026.
+Last updated: 28 September 2026.
 
 ---
 
@@ -204,13 +204,6 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 - **Impact:** "It builds" is weaker evidence than "here is an asciinema of an iOS app hashing a payload via willow-go." For demos and write-ups, the latter is significantly more persuasive.
 - **Revisit:** Pair with public-release README polish. Plan: a 1-screen SwiftUI app with a text input and a "Hash" button that calls `MobileHashPayload` and displays the hex.
 
-### willow25 keypair generation helpers
-
-- **Origin:** Rust willow25 has `randomly_generate_subspace(rng)` returning `(SubspaceId, SubspaceSecret)`. We expose nothing — callers must use `crypto/ed25519.GenerateKey(rand.Reader)` directly.
-- **Why deferred:** Trivial wrappers, not blocking.
-- **Impact:** Minor ergonomics. Anyone reading meadowcap tests sees direct `ed25519.GenerateKey` calls.
-- **Revisit:** Add `RandomNamespace()` / `RandomSubspace()` wrappers when a public-API consumer needs them.
-
 ### Upstream willow_test_vectors: sets we do not exercise
 
 - **Origin:** The regenerated Codeberg corpus (submodule pin `68117e0b`, 2 September 2026) is counted at 10,170 vectors by `TestUpstream_CoverageSummary`, which prints the per-set inventory; 2,725 of them are exercised. The rest need types or encodings we have not implemented: capabilities and authorisation tokens (EncodeMcCapability_1/_2, encode_mc_capability_1/_2, EncodeMeadowcapAuthorisationToken, EncodeMeadowcapAuthorisationTokenRelative, EncodeMeadowcapAuthorisedEntry), private area and private path encodings (EncodePrivateAreaAlmostInArea, EncodePrivatePathExtendsPath), Range3d and absolute Area encodings (Encode3dRange, encode_3d_range, EncodeArea, encode_area; the last two only check the test-only reference decoder), EncodeEntryInNamespaceArea, id codecs, the id and payload digest orderings, `Path.successor` / `predecessor` / `append`, and `store_pruning`, whose inputs are authorised entries.
@@ -261,6 +254,11 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 - **Closed by:** native `testing.F` fuzz targets on main (June 2026).
 - **Resolution:** Added `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), each seeded from existing fixtures. Targets assert the decoders never panic on attacker-supplied input, report a consumed length within bounds, respect the configured limits, and satisfy encode-idempotence. A CI step runs each target for 20s on every push. Writing the path targets immediately surfaced that the byte-for-byte round-trip assumption is wrong for the lenient decoder (it accepts non-minimal encodings), so the invariant was tightened to `Decode(Encode(p))` equality rather than input-byte equality. This is the same class of input as the 2^64-1 component-length panic the upstream negative vectors found, now under continuous fuzzing.
+
+### Keypair generation helpers (formerly "willow25 keypair generation helpers")
+
+- **Closed by:** `meadowcap.GenerateCommunalNamespace` (September 2026).
+- **Resolution:** A helper became necessary once `NewCommunal` started refusing owned namespace keys, since about half of all random Ed25519 keys identify owned namespaces. `GenerateCommunalNamespace` is the counterpart of willow_rs `randomly_generate_communal_namespace` and sits next to `IsCommunal` in `meadowcap`; the sync demo and the tests use it. Subspace keys are plain Ed25519 keys, so `ed25519.GenerateKey` stays the way to make them. Generating owned namespace keys only matters together with owned capabilities, which are Phase 2.
 
 ### Upstream willow_test_vectors: relative path encodings (formerly "relative-encoding adoption blocked")
 

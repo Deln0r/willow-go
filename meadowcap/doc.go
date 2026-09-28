@@ -5,12 +5,14 @@
 // See https://willowprotocol.org/specs/meadowcap/.
 //
 // A communal capability binds a receiver to their own subspace within a
-// namespace. Capabilities can be handed on: AppendDelegation narrows the
-// granted area and transfers it to a new receiver, signing the canonical
-// handover bytes with the current receiver's key, and IsValid walks the
-// resulting chain verifying every link. AuthorisationToken wraps a capability
-// with a signature over an entry's canonical encoding, and is the unit a Store
-// uses to gate insertions.
+// namespace, and is only valid in a communal namespace: IsCommunal tells
+// communal namespace keys from owned ones, and GenerateCommunalNamespace
+// makes a fresh communal namespace key. Capabilities can be handed on:
+// AppendDelegation narrows the granted area and transfers it to a new
+// receiver, signing the canonical handover bytes with the current receiver's
+// key, and IsValid walks the resulting chain verifying every link.
+// AuthorisationToken wraps a capability with a signature over an entry's
+// canonical encoding, and is the unit a Store uses to gate insertions.
 //
 // Scope today: communal capabilities including multi-step delegation chains,
 // validated against delegation chains signed by willow_rs. Owned namespaces

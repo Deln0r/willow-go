@@ -6,6 +6,8 @@ package meadowcap
 import (
 	"crypto/ed25519"
 	"errors"
+	"fmt"
+	"io"
 
 	"github.com/Deln0r/willow-go/datamodel"
 )
@@ -48,6 +50,33 @@ var (
 // https://willowprotocol.org/specs/meadowcap/index.html#is_communal.
 func IsCommunal(namespaceKey ed25519.PublicKey) bool {
 	return len(namespaceKey) == ed25519.PublicKeySize && namespaceKey[ed25519.PublicKeySize-1]&1 == 0
+}
+
+// maxCommunalAttempts bounds GenerateCommunalNamespace. About one Ed25519
+// key in two identifies a communal namespace, so a working random source
+// needs n attempts with probability 2^-n; the bound only keeps a broken
+// source (one that keeps returning the same bytes) from looping forever.
+const maxCommunalAttempts = 128
+
+// GenerateCommunalNamespace generates an Ed25519 key pair whose public key
+// identifies a communal namespace (see IsCommunal), drawing key pairs from
+// random until one does. If random is nil, a secure random source is used,
+// as in ed25519.GenerateKey. It is the counterpart of willow_rs
+// randomly_generate_communal_namespace.
+//
+// Communal capabilities never need the namespace secret; it is returned for
+// parity with ed25519.GenerateKey and willow_rs.
+func GenerateCommunalNamespace(random io.Reader) (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	for attempt := 0; attempt < maxCommunalAttempts; attempt++ {
+		pub, priv, err := ed25519.GenerateKey(random)
+		if err != nil {
+			return nil, nil, err
+		}
+		if IsCommunal(pub) {
+			return pub, priv, nil
+		}
+	}
+	return nil, nil, fmt.Errorf("meadowcap: no communal namespace key in %d attempts, the random source looks broken", maxCommunalAttempts)
 }
 
 // CommunalCapability is a Meadowcap capability rooted in a communal genesis.
