@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 )
 
@@ -308,4 +309,78 @@ func TestPath_EncodeExtending_PanicsOnNonPrefix(t *testing.T) {
 	prefix := pathOf(t, "other")
 	path := pathOf(t, "alpha", "beta")
 	_ = path.EncodeExtending(prefix)
+}
+
+// allPaths returns every path that fits within limits. The count grows with
+// 256^min(MaxComponentLength, MaxPathLength), so it only suits tiny limits.
+func allPaths(t *testing.T, limits Limits) []Path {
+	t.Helper()
+	// byLen[n] holds every component of length n; no component can be
+	// longer than maxLen.
+	maxLen := min(limits.MaxComponentLength, limits.MaxPathLength)
+	byLen := make([][][]byte, maxLen+1)
+	byLen[0] = [][]byte{{}}
+	for n := 1; n <= maxLen; n++ {
+		for _, shorter := range byLen[n-1] {
+			for b := 0; b < 256; b++ {
+				byLen[n] = append(byLen[n], append(append([]byte{}, shorter...), byte(b)))
+			}
+		}
+	}
+
+	var paths []Path
+	var gen func(cur [][]byte, total int)
+	gen = func(cur [][]byte, total int) {
+		paths = append(paths, mustPath(t, limits, cur))
+		if len(cur) == limits.MaxComponentCount {
+			return
+		}
+		// Only components that still fit within MaxPathLength.
+		for n := 0; n <= min(maxLen, limits.MaxPathLength-total); n++ {
+			for _, c := range byLen[n] {
+				gen(append(cur, c), total+n)
+			}
+		}
+	}
+	gen(nil, 0)
+	return paths
+}
+
+// TestPath_SuccessorPredecessor_Exhaustive sorts every path within small
+// limits and checks that each path's successor and predecessor are exactly
+// its neighbours, and that the least and greatest paths have none. Each set
+// of limits makes a different bound the binding one.
+func TestPath_SuccessorPredecessor_Exhaustive(t *testing.T) {
+	t.Parallel()
+	for _, limits := range []Limits{
+		{MaxComponentLength: 1, MaxComponentCount: 3, MaxPathLength: 1}, // trailing components can only be empty
+		{MaxComponentLength: 1, MaxComponentCount: 2, MaxPathLength: 2}, // component length and count
+		{MaxComponentLength: 2, MaxComponentCount: 1, MaxPathLength: 2}, // multi-byte components
+		{MaxComponentLength: 3, MaxComponentCount: 1, MaxPathLength: 2}, // path length within one component
+		{MaxComponentLength: 2, MaxComponentCount: 2, MaxPathLength: 2}, // path length across components
+	} {
+		paths := allPaths(t, limits)
+		sort.Slice(paths, func(i, j int) bool { return paths[i].Compare(paths[j]) < 0 })
+
+		var mismatches int
+		for i, p := range paths {
+			succ, ok := p.Successor()
+			if wantOK := i+1 < len(paths); ok != wantOK || (ok && !succ.Equal(paths[i+1])) {
+				mismatches++
+				if mismatches <= 5 {
+					t.Errorf("%+v: successor of %x = %x (ok=%v), want ok=%v", limits, componentDump(p), componentDump(succ), ok, wantOK)
+				}
+			}
+			pred, ok := p.Predecessor()
+			if wantOK := i > 0; ok != wantOK || (ok && !pred.Equal(paths[i-1])) {
+				mismatches++
+				if mismatches <= 5 {
+					t.Errorf("%+v: predecessor of %x = %x (ok=%v), want ok=%v", limits, componentDump(p), componentDump(pred), ok, wantOK)
+				}
+			}
+		}
+		if mismatches > 0 {
+			t.Errorf("%+v: %d mismatches over %d paths", limits, mismatches, len(paths))
+		}
+	}
 }

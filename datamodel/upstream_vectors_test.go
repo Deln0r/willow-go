@@ -400,29 +400,48 @@ func TestUpstream_path_longest_common_prefix(t *testing.T) {
 	t.Logf("path_longest_common_prefix: %d/%d pass", pass, pass+fail)
 }
 
-func TestUpstream_path_least_path_lexicographically_greater_but_not_prefixed_by_original(t *testing.T) {
+// runPartialPathOperatorVectors exercises a data_model partial unary operator
+// on paths: every input under some/ must map to the path in output/, and no
+// input under none/ may have a result.
+func runPartialPathOperatorVectors(t *testing.T, name string, op func(Path) (Path, bool)) {
+	t.Helper()
 	requireCorpus(t)
-	dir := upstreamDir("data_model", "path_least_path_lexicographically_greater_but_not_prefixed_by_original")
+	dir := upstreamDir("data_model", name)
 	var pass, fail int
 	for _, kind := range []string{"some", "none"} {
 		for _, n := range listVectors(t, filepath.Join(dir, kind, "input")) {
 			p := mustDecodePathVector(t, readVector(t, filepath.Join(dir, kind, "input", n)))
-			got, ok := p.GreaterButNotPrefixed()
+			got, ok := op(p)
 			if kind == "none" {
 				if ok {
-					t.Errorf("none/%s: got %x, want no output", n, got.Encode())
+					t.Errorf("%s none/%s: got %x, want no output", name, n, got.Encode())
 					fail++
 					continue
 				}
 			} else if want := readVector(t, filepath.Join(dir, kind, "output", n)); !ok || !bytes.Equal(got.Encode(), want) {
-				t.Errorf("some/%s: got %x (ok=%v), want %x", n, got.Encode(), ok, want)
+				t.Errorf("%s some/%s: got %x (ok=%v), want %x", name, n, got.Encode(), ok, want)
 				fail++
 				continue
 			}
 			pass++
 		}
 	}
-	t.Logf("path_least_path_lexicographically_greater_but_not_prefixed_by_original: %d/%d pass", pass, pass+fail)
+	t.Logf("%s: %d/%d pass", name, pass, pass+fail)
+}
+
+func TestUpstream_PathPartialOperators(t *testing.T) {
+	for _, s := range []struct {
+		name string
+		op   func(Path) (Path, bool)
+	}{
+		{"path_least_path_lexicographically_greater_but_not_prefixed_by_original", Path.GreaterButNotPrefixed},
+		{"path_successor", Path.Successor},
+		{"path_predecessor", Path.Predecessor},
+	} {
+		t.Run(s.name, func(t *testing.T) {
+			runPartialPathOperatorVectors(t, s.name, s.op)
+		})
+	}
 }
 
 // TestUpstream_CoverageSummary logs a per-set inventory of the upstream
@@ -443,6 +462,7 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 		"data_model/path_is_related_to": true, "data_model/path_is_less_than_or_equal_to": true,
 		"data_model/path_longest_common_prefix":                                             true,
 		"data_model/path_least_path_lexicographically_greater_but_not_prefixed_by_original": true,
+		"data_model/path_successor":                                                         true, "data_model/path_predecessor": true,
 	}
 	harness := map[string]bool{"codec/EncodeArea": true, "codec/encode_area": true}
 

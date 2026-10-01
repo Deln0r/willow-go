@@ -220,6 +220,77 @@ func (p Path) GreaterButNotPrefixed() (Path, bool) {
 	return Path{}, false
 }
 
+// Successor returns the least Path strictly greater than p (in the order of
+// Compare) that fits within p's limits, or (zero, false) if p is the greatest
+// such path.
+//
+// Appending an empty component gives the least path that extends p. When p
+// already has MaxComponentCount components nothing extends it, so the
+// successor is GreaterButNotPrefixed. Ported from willow_rs (TrySuccessor for
+// Path).
+func (p Path) Successor() (Path, bool) {
+	if len(p.components) >= p.limits.MaxComponentCount {
+		return p.GreaterButNotPrefixed()
+	}
+	newComps := make([][]byte, len(p.components)+1)
+	for i, c := range p.components {
+		newComps[i] = cloneBytes(c)
+	}
+	newComps[len(p.components)] = []byte{}
+	return Path{components: newComps, limits: p.limits}, true
+}
+
+// Predecessor returns the greatest Path strictly less than p (in the order of
+// Compare) that fits within p's limits, or (zero, false) if p is the empty
+// path, which is the least of all paths.
+//
+// A trailing empty component is simply dropped. Otherwise the final component
+// is decremented: a trailing 0x00 byte is removed, any other final byte is
+// decremented and followed by 0xFF bytes as far as the limits allow. The path
+// is then filled up with components of 0xFF bytes, each as long as the limits
+// allow, until it has MaxComponentCount components; that makes it the greatest
+// path below p. Ported from willow_rs (TryPredecessor for Path).
+func (p Path) Predecessor() (Path, bool) {
+	n := len(p.components)
+	if n == 0 {
+		return Path{}, false
+	}
+	final := p.components[n-1]
+	if len(final) == 0 {
+		newComps := make([][]byte, n-1)
+		for i, c := range p.components[:n-1] {
+			newComps[i] = cloneBytes(c)
+		}
+		return Path{components: newComps, limits: p.limits}, true
+	}
+
+	newComps := make([][]byte, n-1, p.limits.MaxComponentCount)
+	total := 0
+	for i, c := range p.components[:n-1] {
+		newComps[i] = cloneBytes(c)
+		total += len(c)
+	}
+
+	var decremented []byte
+	if last := final[len(final)-1]; last == 0 {
+		decremented = cloneBytes(final[:len(final)-1])
+	} else {
+		// p is valid, so this length is at least len(final).
+		decremented = bytes.Repeat([]byte{0xFF}, min(p.limits.MaxComponentLength, p.limits.MaxPathLength-total))
+		copy(decremented, final)
+		decremented[len(final)-1] = last - 1
+	}
+	newComps = append(newComps, decremented)
+	total += len(decremented)
+
+	for len(newComps) < p.limits.MaxComponentCount {
+		fill := min(p.limits.MaxComponentLength, p.limits.MaxPathLength-total)
+		newComps = append(newComps, bytes.Repeat([]byte{0xFF}, fill))
+		total += fill
+	}
+	return Path{components: newComps, limits: p.limits}, true
+}
+
 // Compare returns -1, 0, or +1 comparing p to other lexicographically by
 // component. When all shared components are equal, the shorter path is less.
 // Matches the Willow spec ordering on paths.

@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 28 September 2026.
+Last updated: 1 October 2026.
 
 ---
 
@@ -49,13 +49,6 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 - **Why deferred:** Only consumer is the sync layer (Phase 2). `Area` alone is sufficient for meadowcap capabilities.
 - **Impact:** None until sync work begins.
 - **Revisit:** Phase 2 alongside Confidential Sync.
-
-### `Path.successor` / `Path.predecessor`
-
-- **Origin:** `successor` returns the lex-next path in the data-model ordering, `predecessor` the lex-prev. Used by `Range3d.singleton(coord)` to express "exactly this coordinate" as a Range3d.
-- **Why deferred:** Not used by current consumers. `Area.AsRange3d` uses `GreaterButNotPrefixed` instead, which has different semantics — it returns the lex-next path that is NOT a child of `self`, suitable for prefix-based range bounds.
-- **Impact:** Cannot express `Range3d.singleton(coordinate)` per the Rust API. Workaround: build the Range3d directly with manual closed ranges.
-- **Revisit:** When a consumer needs singleton Range3d. Likely Phase 2 alongside sync, possibly sooner if smoketest demands it.
 
 ### `Range3d` byte encoding (`encode_range_3d`)
 
@@ -206,9 +199,9 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 ### Upstream willow_test_vectors: sets we do not exercise
 
-- **Origin:** The regenerated Codeberg corpus (submodule pin `68117e0b`, 2 September 2026) is counted at 10,170 vectors by `TestUpstream_CoverageSummary`, which prints the per-set inventory; 2,725 of them are exercised. The rest need types or encodings we have not implemented: capabilities and authorisation tokens (EncodeMcCapability_1/_2, encode_mc_capability_1/_2, EncodeMeadowcapAuthorisationToken, EncodeMeadowcapAuthorisationTokenRelative, EncodeMeadowcapAuthorisedEntry), private area and private path encodings (EncodePrivateAreaAlmostInArea, EncodePrivatePathExtendsPath), Range3d and absolute Area encodings (Encode3dRange, encode_3d_range, EncodeArea, encode_area; the last two only check the test-only reference decoder), EncodeEntryInNamespaceArea, id codecs, the id and payload digest orderings, `Path.successor` / `predecessor` / `append`, and `store_pruning`, whose inputs are authorised entries.
+- **Origin:** The regenerated Codeberg corpus (submodule pin `68117e0b`, 2 September 2026) is counted at 10,170 vectors by `TestUpstream_CoverageSummary`, which prints the per-set inventory; 2,804 of them are exercised. The rest need types or encodings we have not implemented: capabilities and authorisation tokens (EncodeMcCapability_1/_2, encode_mc_capability_1/_2, EncodeMeadowcapAuthorisationToken, EncodeMeadowcapAuthorisationTokenRelative, EncodeMeadowcapAuthorisedEntry), private area and private path encodings (EncodePrivateAreaAlmostInArea, EncodePrivatePathExtendsPath), Range3d and absolute Area encodings (Encode3dRange, encode_3d_range, EncodeArea, encode_area; the last two only check the test-only reference decoder), EncodeEntryInNamespaceArea, id codecs, the id and payload digest orderings, `Path` append, and `store_pruning`, whose inputs are authorised entries.
 - **Why deferred:** These encodings are used by Confidential Sync, which is Phase 2. Implementing them in pre-MVP would be premature scope creep.
-- **Impact:** 7,003 upstream vectors (excluding the reference-decoder check) are not exercised. Store pruning semantics are still covered through the entry_is_newer_than, entry_prunes and entry_is_pruned_by predicate sets.
+- **Impact:** 6,924 upstream vectors (excluding the reference-decoder check) are not exercised. Store pruning semantics are still covered through the entry_is_newer_than, entry_prunes and entry_is_pruned_by predicate sets.
 - **Revisit:** Phase 2 alongside Confidential Sync.
 
 ### Path `Hash` implementation
@@ -254,6 +247,11 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 - **Closed by:** native `testing.F` fuzz targets on main (June 2026).
 - **Resolution:** Added `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), each seeded from existing fixtures. Targets assert the decoders never panic on attacker-supplied input, report a consumed length within bounds, respect the configured limits, and satisfy encode-idempotence. A CI step runs each target for 20s on every push. Writing the path targets immediately surfaced that the byte-for-byte round-trip assumption is wrong for the lenient decoder (it accepts non-minimal encodings), so the invariant was tightened to `Decode(Encode(p))` equality rather than input-byte equality. This is the same class of input as the 2^64-1 component-length panic the upstream negative vectors found, now under continuous fuzzing.
+
+### `Path.successor` / `Path.predecessor`
+
+- **Closed by:** `Path.Successor` and `Path.Predecessor` (October 2026).
+- **Resolution:** Ported from willow_rs (`TrySuccessor` and `TryPredecessor` for `Path`). The successor appends an empty component when the component count allows it, and is `GreaterButNotPrefixed` otherwise. The predecessor drops a trailing empty component, or else decrements the final component and fills the path up with maximal components. Both pass the upstream path_successor and path_predecessor vectors (79), and an exhaustive test checks them against every path for five small sets of limits, one per binding bound: each path's successor and predecessor must be its neighbours in `Compare` order. The exhaustive test also catches a predecessor that pads the decremented component to the component length limit while ignoring the path length limit, which the upstream vectors do not. A path range holding exactly one path can now be written as the half-open range from a path to its successor; a `Range3d` singleton constructor would also need successors for subspace ids and is not added.
 
 ### Keypair generation helpers (formerly "willow25 keypair generation helpers")
 
