@@ -36,7 +36,7 @@ In scope:
 
 Out of scope:
 
-- Vulnerabilities in dependencies. willow-go currently has one direct dependency (`golang.org/x/mobile`) plus stdlib-adjacent indirects (`golang.org/x/mod`, `golang.org/x/sync`, `golang.org/x/tools`). Please report advisories for those upstream to the Go team.
+- Vulnerabilities in dependencies. willow-go currently has one direct dependency (`golang.org/x/mobile`) plus stdlib-adjacent indirects (`golang.org/x/mod`, `golang.org/x/sync`, `golang.org/x/tools`). Please report advisories for those upstream to the Go team. CI runs `govulncheck` on every push, so a published advisory that our code actually reaches fails the build here as well.
 - Confidential Sync (the layer formerly called WGPS), persistent store backend, owned and read capabilities, transport encryption. These are Phase 2 and not yet shipped; see [TECH_DEBT.md](TECH_DEBT.md). Reports against unshipped code are tracked as design feedback rather than as security advisories.
 - Issues that require a non-default, intentionally insecure configuration
 

@@ -47,6 +47,11 @@ jobs:
           go install honnef.co/go/tools/cmd/staticcheck@v0.7.0
           staticcheck ./...
 
+      - name: govulncheck (known vulnerabilities reachable from our code)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+          govulncheck ./...
+
       - name: go test
         run: go test -race -count=1 ./...
 

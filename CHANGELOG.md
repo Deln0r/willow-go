@@ -13,6 +13,7 @@
 - Issue templates (bug report, feature request) with a config linking to the Phase 2 roadmap and security policy.
 - Native `testing.F` fuzz harness: `FuzzDecodeCU64Standalone` (encoding), `FuzzDecodePath` and `FuzzDecodeExtending` (datamodel), seeded from existing fixtures and run for 20s each in CI. Targets assert the decoders never panic on attacker-supplied input, stay within bounds and limits, and satisfy encode-idempotence. Closes the open `TECH_DEBT.md` fuzz item.
 - CI `staticcheck` step pinned to v0.7.0 (2026.1).
+- CI `govulncheck` step pinned to v1.8.0: the build fails when our code reaches a known vulnerability in a dependency or in the standard library of the Go release CI builds with. Clean today; a deliberately reachable call into a vulnerable `golang.org/x/text` version makes it fail as expected.
 - `cmd/willow-cli`: a read-only inspector with `path encode`/`path decode`, `entry decode`, and `digest` (WILLIAM3) subcommands, for cross-implementation interop debugging. No network, no sync, no key generation. Capability encodings are intentionally not covered (no canonical wire format yet, Phase 2).
 - `HACKING.md` contributor onboarding (repo map, everyday commands, fuzzing, fixture regeneration) and a `make help` target.
 - `BenchmarkPath_Decode_Large` (32 components × 128 bytes) filling the previously unmeasured pathological-decode cell in `BENCHMARKS.md`; benchmark numbers and date refreshed on Go 1.26.3.

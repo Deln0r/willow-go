@@ -55,7 +55,10 @@ make help         # list targets
 ```
 
 Before sending a PR, run what CI runs: `go vet ./...`, `gofmt -s -l .` (must be
-empty), `staticcheck ./...`, `make test`, and `make smoketest`.
+empty), `staticcheck ./...`, `govulncheck ./...`, `make test`, and
+`make smoketest`. govulncheck reports standard-library vulnerabilities for the
+Go release you run it with, so an older local Go can show findings that CI,
+which builds with the latest 1.26 patch release, does not.
 
 ## Fuzzing
 
