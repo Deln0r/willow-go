@@ -415,8 +415,8 @@ func TestDecodeAreaRelativeTo_Containment(t *testing.T) {
 			t.Errorf("%s: %v", c.name, err)
 			continue
 		}
-		if n != len(c.src) || !c.rel.includesArea(got) {
-			t.Errorf("%s: consumed %d of %d, included in rel: %v", c.name, n, len(c.src), c.rel.includesArea(got))
+		if n != len(c.src) || !c.rel.IncludesArea(got) {
+			t.Errorf("%s: consumed %d of %d, included in rel: %v", c.name, n, len(c.src), c.rel.IncludesArea(got))
 		}
 	}
 }

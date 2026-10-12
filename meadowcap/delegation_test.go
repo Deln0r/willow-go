@@ -116,6 +116,49 @@ func TestDelegation_RejectsAreaNotIncluded(t *testing.T) {
 	}
 }
 
+func TestDelegation_RejectsWiderTimeRange(t *testing.T) {
+	t.Parallel()
+	nsPub := makeCommunalNamespace(t)
+	rootPub, rootPriv := makeKeypair(t)
+	bobPub, bobPriv := makeKeypair(t)
+	carolPub, _ := makeKeypair(t)
+
+	cap, err := NewCommunal(AccessModeWrite, nsPub, rootPub)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Narrowing the time range is allowed...
+	narrow := subspaceArea(t, rootPub, datamodel.EmptyPath(testLimits), mustClosedTimes(t, 10, 20))
+	if err := cap.AppendDelegation(rootPriv, narrow, bobPub); err != nil {
+		t.Fatalf("narrowing delegation: %v", err)
+	}
+
+	// ...widening it again is not, at either end.
+	for _, times := range []datamodel.TimeRange{
+		mustClosedTimes(t, 10, 30),
+		mustClosedTimes(t, 5, 20),
+		datamodel.NewTimeRangeOpen(10),
+	} {
+		wider := subspaceArea(t, rootPub, datamodel.EmptyPath(testLimits), times)
+		if err := cap.AppendDelegation(bobPriv, wider, carolPub); !errors.Is(err, ErrAreaNotIncluded) {
+			t.Errorf("times %+v: got %v, want ErrAreaNotIncluded", times, err)
+		}
+	}
+	if !cap.IsValid() || len(cap.Delegations) != 1 {
+		t.Errorf("rejected delegations must leave the chain unchanged: valid=%v, %d delegations", cap.IsValid(), len(cap.Delegations))
+	}
+}
+
+func mustClosedTimes(t *testing.T, start, end uint64) datamodel.TimeRange {
+	t.Helper()
+	times, err := datamodel.NewTimeRangeClosed(start, end)
+	if err != nil {
+		t.Fatalf("NewTimeRangeClosed(%d, %d): %v", start, end, err)
+	}
+	return times
+}
+
 func TestDelegation_RejectsWrongPrivateKey(t *testing.T) {
 	t.Parallel()
 	nsPub := makeCommunalNamespace(t)

@@ -51,7 +51,7 @@ func (c *CommunalCapability) AppendDelegation(
 
 	limits := newArea.PathPrefix.Limits()
 	currentArea := c.GrantedArea(limits)
-	if !areaIncludes(currentArea, newArea) {
+	if !currentArea.IncludesArea(newArea) {
 		return ErrAreaNotIncluded
 	}
 
@@ -98,7 +98,7 @@ func (c CommunalCapability) chainIsValid() bool {
 		} else {
 			prevArea = c.Delegations[i-1].Area
 		}
-		if !areaIncludes(prevArea, deleg.Area) {
+		if !prevArea.IncludesArea(deleg.Area) {
 			return false
 		}
 
@@ -179,32 +179,4 @@ func modeByte(m AccessMode) byte {
 		return 0
 	}
 	return 1
-}
-
-// areaIncludes reports whether outer contains inner: outer is a subset
-// constraint, inner must be more specific (or equal). This mirrors
-// Area.includesArea in datamodel/area.go, exposed locally because that
-// method is package-private.
-func areaIncludes(outer, inner datamodel.Area) bool {
-	if outer.Subspace != nil {
-		if inner.Subspace == nil {
-			return false
-		}
-		if !bytesEqual(*outer.Subspace, *inner.Subspace) {
-			return false
-		}
-	}
-	if !outer.PathPrefix.IsPrefixOf(inner.PathPrefix) {
-		return false
-	}
-	if inner.Times.Start < outer.Times.Start {
-		return false
-	}
-	if outer.Times.Open {
-		return true
-	}
-	if inner.Times.Open {
-		return false
-	}
-	return inner.Times.End <= outer.Times.End
 }

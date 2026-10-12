@@ -126,14 +126,14 @@ func (a Area) AsRange3d() Range3d {
 // EncodeRelativeTo returns the byte-encoding of a relative to rel per the
 // Willow spec encode_area_in_area
 // (https://willowprotocol.org/specs/encodings/index.html#encode_area_in_area).
-// Caller must ensure rel includes a (a.IsIncludedIn(rel) must hold) — this
+// Caller must ensure rel includes a (rel.IncludesArea(a) must hold); this
 // is a panic-on-misuse precondition matching the upstream debug_assert.
 //
 // Subspace ID width is implicit in the byte slices: encoder emits len(a.Subspace)
 // raw bytes for the explicit-subspace case. Decoders must know the width
 // out-of-band; see DecodeAreaRelativeTo.
 func (a Area) EncodeRelativeTo(rel Area) []byte {
-	if !rel.includesArea(a) {
+	if !rel.IncludesArea(a) {
 		panic("datamodel: EncodeRelativeTo requires rel to include self")
 	}
 
@@ -343,10 +343,11 @@ func DecodeAreaRelativeTo(limits Limits, rel Area, subspaceWidth int, src []byte
 	return Area{Subspace: sub, PathPrefix: path, Times: times}, pos, nil
 }
 
-// includesArea reports whether self contains the entire other area (every
-// coordinate in other is also in self). Used as the precondition for
-// EncodeRelativeTo.
-func (a Area) includesArea(other Area) bool {
+// IncludesArea reports whether a includes the entire other area, that is,
+// every coordinate in other is also in a. See
+// https://willowprotocol.org/specs/grouping-entries/index.html#area_include_area.
+// EncodeRelativeTo requires it of its reference area.
+func (a Area) IncludesArea(other Area) bool {
 	// Subspace: a.Subspace=None accepts any other.Subspace; otherwise they
 	// must equal.
 	if a.Subspace != nil {
