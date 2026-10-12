@@ -32,7 +32,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Paths (absolute) | Stable | 159 yay + 256 nay upstream codec vectors and 442 path predicate / operator vectors pass | [`datamodel/paths.go`](datamodel/paths.go) |
 | Paths (relative / extends) | Stable | 17 fixtures byte-identical; 287 yay + 436 nay upstream vectors pass | [`datamodel/paths.go`](datamodel/paths.go) |
 | Entries | Stable | 10 fixtures byte-identical vs willow_rs v0.7.0; 214 yay + 198 nay upstream vectors pass | [`datamodel/entry.go`](datamodel/entry.go) |
-| Areas (incl. area-in-area) | Stable | 8 fixtures byte-identical; 197 yay + 303 nay upstream area-in-area vectors pass | [`datamodel/area.go`](datamodel/area.go) |
+| Areas (incl. area-in-area) | Stable | 8 fixtures byte-identical; 197 yay + 303 nay upstream area-in-area vectors and 242 area grouping vectors (inclusion, intersection, subspace and full area) pass | [`datamodel/area.go`](datamodel/area.go) |
 | Range3d / groupings | Stable | Unit-tested | [`datamodel/groupings.go`](datamodel/groupings.go) |
 | In-memory Store | Stable | Prefix-pruning + concurrent access; 312 upstream newer-than / prunes vectors pass | [`datamodel/store.go`](datamodel/store.go) |
 | Persistent Store | Phase 2 | — | — |
@@ -45,7 +45,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
-54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 2,804 vectors from the official upstream `willow_test_vectors` corpus pass: 2,050 codec vectors (857 that must decode, 1,193 attacker-supplied ones that must be rejected) for path, entry and area-in-area encodings, and 754 data-model predicate and operator vectors. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 92 test functions (237 runs including subtests) across the 6 packages with test files.
+54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 3,046 vectors from the official upstream `willow_test_vectors` corpus pass: 2,050 codec vectors (857 that must decode, 1,193 attacker-supplied ones that must be rejected) for path, entry and area-in-area encodings, 754 data-model predicate and operator vectors, and 242 grouping vectors over areas. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 94 test functions (244 runs including subtests) across the 6 packages with test files.
 
 ## Goals
 
@@ -146,7 +146,7 @@ testdata/william3/william3vectors.txt                          - 18 cases (verba
 testdata/meadowcap/delegation_chains.json                      - 4 cases (Ed25519 signed)
 ```
 
-**B. Official upstream `willow_test_vectors` (2,804 vectors exercised).** Pulled in as a git submodule under `testdata/upstream_vectors/`, tracking the [Codeberg repository](https://codeberg.org/worm-blossom/willow_test_vectors) (the GitHub copy was archived in August 2026). CI checks it out automatically; locally you initialize it once with `git submodule update --init`. Exercised sets: EncodePath, encode_path, EncodeEntry, encode_entry, EncodePathExtendsPath, path_extends_path, EncodePathRelativePath, path_rel_path, EncodeAreaInArea, encode_area_in_area, and the entry and path predicates and operators. Not exercised: the capability, authorisation token, private area, Range3d and store pruning sets, which need encodings this port does not implement yet (see [TECH_DEBT.md](TECH_DEBT.md)). `go test -v -run TestUpstream_CoverageSummary ./datamodel/` prints the per-set inventory.
+**B. Official upstream `willow_test_vectors` (3,046 vectors exercised).** Pulled in as a git submodule under `testdata/upstream_vectors/`, tracking the [Codeberg repository](https://codeberg.org/worm-blossom/willow_test_vectors) (the GitHub copy was archived in August 2026). CI checks it out automatically; locally you initialize it once with `git submodule update --init`. Exercised sets: EncodePath, encode_path, EncodeEntry, encode_entry, EncodePathExtendsPath, path_extends_path, EncodePathRelativePath, path_rel_path, EncodeAreaInArea, encode_area_in_area, the entry and path predicates and operators, and the groupings sets over areas. Not exercised: the capability, authorisation token, private area, Range3d, store pruning and drop format sets, which need encodings this port does not implement yet (see [TECH_DEBT.md](TECH_DEBT.md)). `go test -v -run TestUpstream_CoverageSummary ./datamodel/` prints the per-set inventory.
 
 ```sh
 $ make smoketest

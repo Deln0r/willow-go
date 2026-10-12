@@ -5,6 +5,7 @@ package datamodel
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,7 +17,7 @@ import (
 
 // Upstream test vectors live in testdata/upstream_vectors/, a git submodule
 // pointing at https://codeberg.org/worm-blossom/willow_test_vectors (the
-// GitHub copy was archived in August 2026). The corpus has two halves:
+// GitHub copy was archived in August 2026). The corpus is split into:
 //
 //   - codec/<name>: yay/ inputs that must decode and nay/ inputs that must
 //     not. Sets named after an encoding relation (EncodePath) accept any
@@ -24,13 +25,16 @@ import (
 //     named after an encoding function (encode_path) accept only canonical
 //     codes. Relative encodings add yay_relative_to/ and nay_relative_to/
 //     holding the reference value.
-//   - data_model/<name>: predicates (true/ and false/ inputs) and operators
-//     (input/ and output/) over Willow data types.
+//   - data_model/<name> and groupings/<name>: predicates (true/ and false/
+//     inputs), operators (input/ and output/) and constants (value) over
+//     Willow data types and over Area and Range3d.
+//   - drop_format/codec: the sideloading format.
 //
 // We run every set whose types this package implements. Capability,
 // authorisation token, private area, absolute Area and Range3d encodings are
-// not implemented here, and store_pruning needs authorised entry decoding;
-// see TECH_DEBT.md.
+// not implemented here (so neither are the groupings sets over Range3d),
+// store_pruning needs authorised entry decoding, and the drop format belongs
+// to sideloading; see TECH_DEBT.md.
 //
 // To initialize the submodule: `git submodule update --init`.
 
@@ -312,31 +316,18 @@ func TestUpstream_Codecs(t *testing.T) {
 	}
 }
 
-// runPredicateVectors exercises a data_model predicate: each input is the
-// concatenated encodings of the arguments, and pred must hold exactly for the
-// inputs under true/.
-func runPredicateVectors[T any](t *testing.T, name string, arity int, decode func([]byte) (T, int, error), pred func(args []T) bool) {
+// runRawPredicateVectors exercises a predicate set under dir (for example
+// "data_model" or "groupings"): eval decodes one input, the concatenated
+// encodings of the arguments, and must report true exactly for the inputs
+// under true/.
+func runRawPredicateVectors(t *testing.T, dir, name string, eval func(t *testing.T, src []byte) bool) {
 	t.Helper()
 	requireCorpus(t)
 	var pass, fail int
 	for _, want := range []bool{true, false} {
-		dir := upstreamDir("data_model", name, fmt.Sprint(want), "input")
-		for _, n := range listVectors(t, dir) {
-			src := readVector(t, filepath.Join(dir, n))
-			args := make([]T, 0, arity)
-			pos := 0
-			for len(args) < arity {
-				v, used, err := decode(src[pos:])
-				if err != nil {
-					t.Fatalf("%s %v/%s: argument %d: %v", name, want, n, len(args), err)
-				}
-				args = append(args, v)
-				pos += used
-			}
-			if pos != len(src) {
-				t.Fatalf("%s %v/%s: %d trailing bytes", name, want, n, len(src)-pos)
-			}
-			if got := pred(args); got != want {
+		inputs := upstreamDir(dir, name, fmt.Sprint(want), "input")
+		for _, n := range listVectors(t, inputs) {
+			if got := eval(t, readVector(t, filepath.Join(inputs, n))); got != want {
 				t.Errorf("%s %v/%s: got %v", name, want, n, got)
 				fail++
 				continue
@@ -345,6 +336,28 @@ func runPredicateVectors[T any](t *testing.T, name string, arity int, decode fun
 		}
 	}
 	t.Logf("%s: %d/%d pass", name, pass, pass+fail)
+}
+
+// runPredicateVectors exercises a data_model predicate whose arity arguments
+// all have the same type.
+func runPredicateVectors[T any](t *testing.T, name string, arity int, decode func([]byte) (T, int, error), pred func(args []T) bool) {
+	t.Helper()
+	runRawPredicateVectors(t, "data_model", name, func(t *testing.T, src []byte) bool {
+		args := make([]T, 0, arity)
+		pos := 0
+		for len(args) < arity {
+			v, used, err := decode(src[pos:])
+			if err != nil {
+				t.Fatalf("%s: argument %d of %x: %v", name, len(args), src, err)
+			}
+			args = append(args, v)
+			pos += used
+		}
+		if pos != len(src) {
+			t.Fatalf("%s: %d trailing bytes in %x", name, len(src)-pos, src)
+		}
+		return pred(args)
+	})
 }
 
 func decodePathArg(src []byte) (Path, int, error) { return Decode(willow25Limits(), src) }
@@ -444,14 +457,107 @@ func TestUpstream_PathPartialOperators(t *testing.T) {
 	}
 }
 
+// decodeAreaPrefix decodes the encode_area argument at the start of src and
+// returns it with the number of bytes it took.
+func decodeAreaPrefix(t *testing.T, src []byte) (Area, int) {
+	t.Helper()
+	a, n, err := decodeAreaVector(src)
+	if err != nil {
+		t.Fatalf("area argument of %x: %v", src, err)
+	}
+	return a, n
+}
+
+// TestUpstream_Groupings runs the groupings sets over Area. Their areas are
+// given in the absolute encode_area format, decoded with the reference
+// transcription that TestUpstream_Codecs checks. The sets over Range3d need
+// the Range3d encoding, which this package does not implement.
+func TestUpstream_Groupings(t *testing.T) {
+	t.Run("area_includes", func(t *testing.T) {
+		runRawPredicateVectors(t, "groupings", "area_includes", func(t *testing.T, src []byte) bool {
+			a, n := decodeAreaPrefix(t, src)
+			e, m, err := DecodeEntry(willow25EntrySpec(), src[n:])
+			if err != nil || n+m != len(src) {
+				t.Fatalf("entry argument of %x: consumed %d of %d bytes, error %v", src, n+m, len(src), err)
+			}
+			return a.IncludesEntry(e)
+		})
+	})
+
+	t.Run("area_includes_area", func(t *testing.T) {
+		runRawPredicateVectors(t, "groupings", "area_includes_area", func(t *testing.T, src []byte) bool {
+			a, n := decodeAreaPrefix(t, src)
+			return a.IncludesArea(mustDecodeAreaVector(t, src[n:]))
+		})
+	})
+
+	t.Run("area_intersection", func(t *testing.T) {
+		requireCorpus(t)
+		dir := upstreamDir("groupings", "area_intersection")
+		var pass, fail int
+		for _, kind := range []string{"some", "none"} {
+			for _, n := range listVectors(t, filepath.Join(dir, kind, "input")) {
+				src := readVector(t, filepath.Join(dir, kind, "input", n))
+				a, used := decodeAreaPrefix(t, src)
+				got, err := a.Intersect(mustDecodeAreaVector(t, src[used:]))
+				if kind == "none" {
+					if !errors.Is(err, ErrEmptyGrouping) {
+						t.Errorf("none/%s: got %x (err %v), want an empty intersection", n, encodeAreaVector(got), err)
+						fail++
+						continue
+					}
+				} else if want := readVector(t, filepath.Join(dir, kind, "output", n)); err != nil || !bytes.Equal(encodeAreaVector(got), want) {
+					t.Errorf("some/%s: got %x (err %v), want %x", n, encodeAreaVector(got), err, want)
+					fail++
+					continue
+				}
+				pass++
+			}
+		}
+		t.Logf("area_intersection: %d/%d pass", pass, pass+fail)
+	})
+
+	t.Run("area_subspace", func(t *testing.T) {
+		requireCorpus(t)
+		dir := upstreamDir("groupings", "area_subspace")
+		var pass, fail int
+		for _, n := range listVectors(t, filepath.Join(dir, "input")) {
+			id := readVector(t, filepath.Join(dir, "input", n))
+			if len(id) != willow25SubspaceIDWidth {
+				t.Fatalf("input/%s: subspace id of %d bytes", n, len(id))
+			}
+			want := readVector(t, filepath.Join(dir, "output", n))
+			if got := encodeAreaVector(SubspaceArea(willow25Limits(), id)); !bytes.Equal(got, want) {
+				t.Errorf("input/%s: got %x, want %x", n, got, want)
+				fail++
+				continue
+			}
+			pass++
+		}
+		t.Logf("area_subspace: %d/%d pass", pass, pass+fail)
+	})
+
+	t.Run("area_full", func(t *testing.T) {
+		requireCorpus(t)
+		want := readVector(t, upstreamDir("groupings", "area_full", "value"))
+		if got := encodeAreaVector(FullArea(willow25Limits())); !bytes.Equal(got, want) {
+			t.Errorf("full area: got %x, want %x", got, want)
+		}
+	})
+}
+
 // TestUpstream_CoverageSummary logs a per-set inventory of the upstream
 // corpus and marks the sets the tests above exercise, as a reminder of the
 // gap. EncodeArea and encode_area only check the test-only reference decoder,
-// so they are marked but not counted.
+// so they are marked but not counted. A constant (a value file) counts as one
+// vector.
 func TestUpstream_CoverageSummary(t *testing.T) {
 	requireCorpus(t)
 	exercised := map[string]bool{
-		"codec/EncodePath": true, "codec/encode_path": true,
+		"groupings/area_includes": true, "groupings/area_includes_area": true,
+		"groupings/area_intersection": true, "groupings/area_subspace": true,
+		"groupings/area_full": true,
+		"codec/EncodePath":    true, "codec/encode_path": true,
 		"codec/EncodeEntry": true, "codec/encode_entry": true,
 		"codec/EncodePathExtendsPath": true, "codec/path_extends_path": true,
 		"codec/EncodePathRelativePath": true, "codec/path_rel_path": true,
@@ -479,7 +585,7 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 
 	var total, covered int
 	t.Log("Upstream willow_test_vectors corpus (codeberg.org/worm-blossom/willow_test_vectors):")
-	for _, half := range []string{"codec", "data_model"} {
+	for _, half := range []string{"codec", "data_model", "groupings", "drop_format"} {
 		sets, err := os.ReadDir(upstreamDir(half))
 		if err != nil {
 			t.Fatalf("read %s: %v", half, err)
@@ -489,14 +595,13 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 				continue
 			}
 			key := half + "/" + s.Name()
-			var count int
-			if half == "codec" {
-				count = countFiles(half, s.Name(), "yay") + countFiles(half, s.Name(), "nay")
-			} else {
-				for _, sub := range []string{"true", "false", "some", "none"} {
-					count += countFiles(half, s.Name(), sub, "input")
-				}
-				count += countFiles(half, s.Name(), "input")
+			count := countFiles(half, s.Name(), "yay") + countFiles(half, s.Name(), "nay")
+			for _, sub := range []string{"true", "false", "some", "none"} {
+				count += countFiles(half, s.Name(), sub, "input")
+			}
+			count += countFiles(half, s.Name(), "input")
+			if _, err := os.Stat(upstreamDir(half, s.Name(), "value")); err == nil {
+				count++
 			}
 			mark := " "
 			switch {

@@ -4,7 +4,7 @@ Running ledger of things deliberately deferred during the willow-go port. Each e
 
 > When closing an item: move it to the "Closed" section at the bottom with the commit SHA / PR that resolved it, do not delete.
 
-Last updated: 1 October 2026.
+Last updated: 12 October 2026.
 
 ---
 
@@ -199,9 +199,9 @@ These are pre-MVP scope but not yet implemented. Tracked here so they do not sli
 
 ### Upstream willow_test_vectors: sets we do not exercise
 
-- **Origin:** The regenerated Codeberg corpus (submodule pin `68117e0b`, 2 September 2026) is counted at 10,170 vectors by `TestUpstream_CoverageSummary`, which prints the per-set inventory; 2,804 of them are exercised. The rest need types or encodings we have not implemented: capabilities and authorisation tokens (EncodeMcCapability_1/_2, encode_mc_capability_1/_2, EncodeMeadowcapAuthorisationToken, EncodeMeadowcapAuthorisationTokenRelative, EncodeMeadowcapAuthorisedEntry), private area and private path encodings (EncodePrivateAreaAlmostInArea, EncodePrivatePathExtendsPath), Range3d and absolute Area encodings (Encode3dRange, encode_3d_range, EncodeArea, encode_area; the last two only check the test-only reference decoder), EncodeEntryInNamespaceArea, id codecs, the id and payload digest orderings, `Path` append, and `store_pruning`, whose inputs are authorised entries.
+- **Origin:** The regenerated Codeberg corpus (submodule pin `0c6d078b`, 22 September 2026) is counted at 11,557 vectors by `TestUpstream_CoverageSummary`, which prints the per-set inventory (a constant counts as one); 3,046 of them are exercised. The rest need types or encodings we have not implemented: capabilities and authorisation tokens (EncodeMcCapability_1/_2, encode_mc_capability_1/_2, EncodeMeadowcapAuthorisationToken, EncodeMeadowcapAuthorisationTokenRelative, EncodeMeadowcapAuthorisedEntry), private area and private path encodings (EncodePrivateAreaAlmostInArea, EncodePrivatePathExtendsPath), Range3d and absolute Area encodings (Encode3dRange, encode_3d_range, EncodeArea, encode_area; the last two only check the test-only reference decoder), the groupings sets over Range3d (their values are Range3d-encoded), EncodeEntryInNamespaceArea, id codecs, the id and payload digest orderings and constants, `Path` append and the least and greatest paths, `store_pruning`, whose inputs are authorised entries, and the drop format used for sideloading.
 - **Why deferred:** These encodings are used by Confidential Sync, which is Phase 2. Implementing them in pre-MVP would be premature scope creep.
-- **Impact:** 6,924 upstream vectors (excluding the reference-decoder check) are not exercised. Store pruning semantics are still covered through the entry_is_newer_than, entry_prunes and entry_is_pruned_by predicate sets.
+- **Impact:** 8,069 upstream vectors (excluding the reference-decoder check) are not exercised. Store pruning semantics are still covered through the entry_is_newer_than, entry_prunes and entry_is_pruned_by predicate sets.
 - **Revisit:** Phase 2 alongside Confidential Sync.
 
 ### Path `Hash` implementation
