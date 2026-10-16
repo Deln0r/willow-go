@@ -351,6 +351,59 @@ func TestArea_EncodeRelativeTo_PanicsOnNonInclusion(t *testing.T) {
 	_ = target.EncodeRelativeTo(rel)
 }
 
+func TestArea_EncodeDecode(t *testing.T) {
+	t.Parallel()
+	sub := bytes.Repeat([]byte{9}, 4)
+	areas := []Area{
+		FullArea(testLimits),
+		SubspaceArea(testLimits, sub),
+		{Subspace: &sub, PathPrefix: pathOf(t, "a", "bc"), Times: mustTimes(t, 5, 6)},
+		{PathPrefix: pathOf(t, "x"), Times: NewTimeRangeOpen(1 << 40)},
+		// The greatest closed range: the end is the largest timestamp.
+		{PathPrefix: EmptyPath(testLimits), Times: mustTimes(t, 0, math.MaxUint64)},
+		{PathPrefix: EmptyPath(testLimits), Times: mustTimes(t, math.MaxUint64-1, math.MaxUint64)},
+	}
+	for _, a := range areas {
+		enc := a.Encode()
+		got, n, err := DecodeArea(testLimits, len(sub), enc)
+		if err != nil || n != len(enc) || !areaEqual(got, a) {
+			t.Errorf("%+v: decoded %+v, consumed %d of %d, error %v", a, got, n, len(enc), err)
+			continue
+		}
+		if again := got.Encode(); !bytes.Equal(again, enc) {
+			t.Errorf("%+v: re-encoded %x, want %x", a, again, enc)
+		}
+	}
+
+	// A closed range whose end would not fit in a timestamp.
+	overflow := func(start, gap uint64) []byte {
+		out := []byte{encoding.WriteTag(0b1000_0000, 6, 2, start)}
+		out = append(out, EmptyPath(testLimits).Encode()...)
+		out = encoding.AppendCU64(out, start, 6)
+		return encoding.AppendCU64Standalone(out, gap)
+	}
+	bad := map[string][]byte{
+		"empty input":            {},
+		"truncated subspace id":  {0b0100_0000, 9, 9},
+		"start at the last time": overflow(math.MaxUint64, 0),
+		"end past the last time": overflow(1, math.MaxUint64-1),
+	}
+	for name, src := range bad {
+		if got, _, err := DecodeArea(testLimits, len(sub), src); err == nil {
+			t.Errorf("%s: decoded %+v, want an error", name, got)
+		}
+	}
+}
+
+func mustTimes(t *testing.T, start, end uint64) TimeRange {
+	t.Helper()
+	times, err := NewTimeRangeClosed(start, end)
+	if err != nil {
+		t.Fatalf("NewTimeRangeClosed(%d, %d): %v", start, end, err)
+	}
+	return times
+}
+
 // TestDecodeAreaRelativeTo_Containment covers the checks that keep the
 // decoder from producing an area outside rel. The rejected shapes are the
 // ones the upstream EncodeAreaInArea negative vectors exercise.

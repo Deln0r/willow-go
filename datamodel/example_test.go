@@ -52,3 +52,23 @@ func ExampleArea_EncodeRelativeTo() {
 	// Output:
 	// e00000000000000000000000000000000000000000000000000000000000000000004163686174
 }
+
+func ExampleDecodeArea() {
+	// Any subspace, paths under "chat", timestamps from 100 up to (not
+	// including) 200.
+	prefix, _ := willow25.NewPath([][]byte{[]byte("chat")})
+	times, _ := datamodel.NewTimeRangeClosed(100, 200)
+	area := datamodel.Area{PathPrefix: prefix, Times: times}
+
+	encoded := area.Encode()
+	fmt.Println(hex.EncodeToString(encoded))
+
+	decoded, n, err := datamodel.DecodeArea(willow25.Limits(), willow25.SubspaceIDWidth, encoded)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(n == len(encoded), decoded.Subspace == nil, decoded.Times.Start, decoded.Times.End)
+	// Output:
+	// bc41636861746463
+	// true true 100 200
+}

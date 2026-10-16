@@ -9,8 +9,9 @@
 // three size constraints (max_component_length, max_component_count,
 // max_path_length) that callers configure per-Path through a Limits value. An
 // Entry pairs a coordinate (namespace, subspace, path, timestamp) with a
-// payload digest and length. Range3d and Area describe sets of coordinates;
-// Area also encodes relative to an enclosing area, which is how Willow
+// payload digest and length. Range3d and Area describe sets of coordinates.
+// An Area encodes on its own (Encode, DecodeArea) or relative to an enclosing
+// area (EncodeRelativeTo, DecodeAreaRelativeTo), which is how Willow
 // compresses shared context on the wire.
 //
 // The package stays generic over Willow's parameters. For the concrete

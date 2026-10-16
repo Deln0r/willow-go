@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
-
-	"github.com/Deln0r/willow-go/encoding"
 )
 
 // Upstream test vectors live in testdata/upstream_vectors/, a git submodule
@@ -31,10 +29,10 @@ import (
 //   - drop_format/codec: the sideloading format.
 //
 // We run every set whose types this package implements. Capability,
-// authorisation token, private area, absolute Area and Range3d encodings are
-// not implemented here (so neither are the groupings sets over Range3d),
-// store_pruning needs authorised entry decoding, and the drop format belongs
-// to sideloading; see TECH_DEBT.md.
+// authorisation token, private area and Range3d encodings are not implemented
+// here (so neither are the groupings sets over Range3d), store_pruning needs
+// authorised entry decoding, and the drop format belongs to sideloading; see
+// TECH_DEBT.md.
 //
 // To initialize the submodule: `git submodule update --init`.
 
@@ -202,85 +200,14 @@ func mustDecodePathVector(t *testing.T, src []byte) Path {
 	return p
 }
 
-// The area-in-area sets give their reference areas in the absolute
-// encode_area format, which this package does not implement. decodeAreaVector
-// and encodeAreaVector are a test-only transcription of it: a header byte
-// (bit 7 set when there is no subspace id, bit 6 set for an open time range,
-// low 6 bits the tag of the start time), the subspace id if any, the path,
-// the start time, and for a closed range the standalone end - start - 1.
-// TestUpstream_Codecs checks them against the EncodeArea and encode_area sets
-// before trusting them as references.
-
-func decodeAreaVector(src []byte) (Area, int, error) {
-	if len(src) < 1 {
-		return Area{}, 0, encoding.ErrShortBuffer
-	}
-	header := src[0]
-	pos := 1
-	var sub *[]byte
-	if header&0b1000_0000 == 0 {
-		if len(src) < pos+willow25SubspaceIDWidth {
-			return Area{}, 0, encoding.ErrShortBuffer
-		}
-		id := append([]byte(nil), src[pos:pos+willow25SubspaceIDWidth]...)
-		sub = &id
-		pos += willow25SubspaceIDWidth
-	}
-	path, n, err := Decode(willow25Limits(), src[pos:])
-	if err != nil {
-		return Area{}, 0, err
-	}
-	pos += n
-	start, n, err := encoding.DecodeCU64(encoding.ExtractTag(header, 6, 2), 6, src[pos:], false)
-	if err != nil {
-		return Area{}, 0, err
-	}
-	pos += n
-	times := NewTimeRangeOpen(start)
-	if header&0b0100_0000 == 0 {
-		gap, n, err := encoding.DecodeCU64Standalone(src[pos:], false)
-		if err != nil {
-			return Area{}, 0, err
-		}
-		pos += n
-		if start == ^uint64(0) || gap > ^uint64(0)-(start+1) {
-			return Area{}, 0, fmt.Errorf("area end overflows")
-		}
-		if times, err = NewTimeRangeClosed(start, start+1+gap); err != nil {
-			return Area{}, 0, err
-		}
-	}
-	return Area{Subspace: sub, PathPrefix: path, Times: times}, pos, nil
-}
-
-func encodeAreaVector(a Area) []byte {
-	header := encoding.WriteTag(0, 6, 2, a.Times.Start)
-	if a.Subspace == nil {
-		header |= 0b1000_0000
-	}
-	if a.Times.Open {
-		header |= 0b0100_0000
-	}
-	out := []byte{header}
-	if a.Subspace != nil {
-		out = append(out, *a.Subspace...)
-	}
-	out = append(out, a.PathPrefix.Encode()...)
-	out = encoding.AppendCU64(out, a.Times.Start, 6)
-	if !a.Times.Open {
-		out = encoding.AppendCU64Standalone(out, a.Times.End-a.Times.Start-1)
-	}
-	return out
-}
-
-func decodeAreaReferenceVector(_ *testing.T, _, src []byte) (func() []byte, int, error) {
-	a, n, err := decodeAreaVector(src)
-	return func() []byte { return encodeAreaVector(a) }, n, err
+func decodeAreaVector(_ *testing.T, _, src []byte) (func() []byte, int, error) {
+	a, n, err := DecodeArea(willow25Limits(), willow25SubspaceIDWidth, src)
+	return a.Encode, n, err
 }
 
 func mustDecodeAreaVector(t *testing.T, src []byte) Area {
 	t.Helper()
-	a, n, err := decodeAreaVector(src)
+	a, n, err := DecodeArea(willow25Limits(), willow25SubspaceIDWidth, src)
 	if err != nil || n != len(src) {
 		t.Fatalf("reference area %x: consumed %d, error %v", src, n, err)
 	}
@@ -294,9 +221,8 @@ func TestUpstream_Codecs(t *testing.T) {
 		canonic  bool
 		decode   codecDecoder
 	}{
-		// Test harness self-check for the reference area decoder.
-		{"EncodeArea", false, false, decodeAreaReferenceVector},
-		{"encode_area", false, true, decodeAreaReferenceVector},
+		{"EncodeArea", false, false, decodeAreaVector},
+		{"encode_area", false, true, decodeAreaVector},
 
 		{"EncodePath", false, false, decodePathVector},
 		{"encode_path", false, true, decodePathVector},
@@ -461,17 +387,16 @@ func TestUpstream_PathPartialOperators(t *testing.T) {
 // returns it with the number of bytes it took.
 func decodeAreaPrefix(t *testing.T, src []byte) (Area, int) {
 	t.Helper()
-	a, n, err := decodeAreaVector(src)
+	a, n, err := DecodeArea(willow25Limits(), willow25SubspaceIDWidth, src)
 	if err != nil {
 		t.Fatalf("area argument of %x: %v", src, err)
 	}
 	return a, n
 }
 
-// TestUpstream_Groupings runs the groupings sets over Area. Their areas are
-// given in the absolute encode_area format, decoded with the reference
-// transcription that TestUpstream_Codecs checks. The sets over Range3d need
-// the Range3d encoding, which this package does not implement.
+// TestUpstream_Groupings runs the groupings sets over Area; their areas are
+// given in the absolute encode_area format. The sets over Range3d need the
+// Range3d encoding, which this package does not implement.
 func TestUpstream_Groupings(t *testing.T) {
 	t.Run("area_includes", func(t *testing.T) {
 		runRawPredicateVectors(t, "groupings", "area_includes", func(t *testing.T, src []byte) bool {
@@ -502,12 +427,12 @@ func TestUpstream_Groupings(t *testing.T) {
 				got, err := a.Intersect(mustDecodeAreaVector(t, src[used:]))
 				if kind == "none" {
 					if !errors.Is(err, ErrEmptyGrouping) {
-						t.Errorf("none/%s: got %x (err %v), want an empty intersection", n, encodeAreaVector(got), err)
+						t.Errorf("none/%s: got %x (err %v), want an empty intersection", n, got.Encode(), err)
 						fail++
 						continue
 					}
-				} else if want := readVector(t, filepath.Join(dir, kind, "output", n)); err != nil || !bytes.Equal(encodeAreaVector(got), want) {
-					t.Errorf("some/%s: got %x (err %v), want %x", n, encodeAreaVector(got), err, want)
+				} else if want := readVector(t, filepath.Join(dir, kind, "output", n)); err != nil || !bytes.Equal(got.Encode(), want) {
+					t.Errorf("some/%s: got %x (err %v), want %x", n, got.Encode(), err, want)
 					fail++
 					continue
 				}
@@ -527,7 +452,7 @@ func TestUpstream_Groupings(t *testing.T) {
 				t.Fatalf("input/%s: subspace id of %d bytes", n, len(id))
 			}
 			want := readVector(t, filepath.Join(dir, "output", n))
-			if got := encodeAreaVector(SubspaceArea(willow25Limits(), id)); !bytes.Equal(got, want) {
+			if got := SubspaceArea(willow25Limits(), id).Encode(); !bytes.Equal(got, want) {
 				t.Errorf("input/%s: got %x, want %x", n, got, want)
 				fail++
 				continue
@@ -540,7 +465,7 @@ func TestUpstream_Groupings(t *testing.T) {
 	t.Run("area_full", func(t *testing.T) {
 		requireCorpus(t)
 		want := readVector(t, upstreamDir("groupings", "area_full", "value"))
-		if got := encodeAreaVector(FullArea(willow25Limits())); !bytes.Equal(got, want) {
+		if got := FullArea(willow25Limits()).Encode(); !bytes.Equal(got, want) {
 			t.Errorf("full area: got %x, want %x", got, want)
 		}
 	})
@@ -548,16 +473,15 @@ func TestUpstream_Groupings(t *testing.T) {
 
 // TestUpstream_CoverageSummary logs a per-set inventory of the upstream
 // corpus and marks the sets the tests above exercise, as a reminder of the
-// gap. EncodeArea and encode_area only check the test-only reference decoder,
-// so they are marked but not counted. A constant (a value file) counts as one
-// vector.
+// gap. A constant (a value file) counts as one vector.
 func TestUpstream_CoverageSummary(t *testing.T) {
 	requireCorpus(t)
 	exercised := map[string]bool{
 		"groupings/area_includes": true, "groupings/area_includes_area": true,
 		"groupings/area_intersection": true, "groupings/area_subspace": true,
 		"groupings/area_full": true,
-		"codec/EncodePath":    true, "codec/encode_path": true,
+		"codec/EncodeArea":    true, "codec/encode_area": true,
+		"codec/EncodePath": true, "codec/encode_path": true,
 		"codec/EncodeEntry": true, "codec/encode_entry": true,
 		"codec/EncodePathExtendsPath": true, "codec/path_extends_path": true,
 		"codec/EncodePathRelativePath": true, "codec/path_rel_path": true,
@@ -570,7 +494,6 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 		"data_model/path_least_path_lexicographically_greater_but_not_prefixed_by_original": true,
 		"data_model/path_successor":                                                         true, "data_model/path_predecessor": true,
 	}
-	harness := map[string]bool{"codec/EncodeArea": true, "codec/encode_area": true}
 
 	countFiles := func(parts ...string) int {
 		entries, _ := os.ReadDir(upstreamDir(parts...))
@@ -608,8 +531,6 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 			case exercised[key]:
 				mark = "X"
 				covered += count
-			case harness[key]:
-				mark = "H"
 			}
 			total += count
 			t.Logf("  [%s] %-90s %d", mark, key, count)

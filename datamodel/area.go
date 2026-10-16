@@ -123,6 +123,84 @@ func (a Area) AsRange3d() Range3d {
 	return Range3d{Subspaces: subs, Paths: paths, Times: a.Times}
 }
 
+// Encode returns the absolute encoding of a per encode_area
+// (https://willowprotocol.org/specs/encodings/index.html#encode_area): a
+// header byte (bit 7 set when the area has no subspace id, bit 6 set for an
+// open time range, the low six bits the tag of the start time), the subspace
+// id if any, the path, the start time, and for a closed range the end minus
+// the start minus one. The subspace id is written raw, len(*a.Subspace) bytes.
+func (a Area) Encode() []byte {
+	header := encoding.WriteTag(0, 6, 2, a.Times.Start)
+	if a.Subspace == nil {
+		header |= 0b1000_0000
+	}
+	if a.Times.Open {
+		header |= 0b0100_0000
+	}
+	dst := []byte{header}
+	if a.Subspace != nil {
+		dst = append(dst, *a.Subspace...)
+	}
+	dst = append(dst, a.PathPrefix.Encode()...)
+	dst = encoding.AppendCU64(dst, a.Times.Start, 6)
+	if !a.Times.Open {
+		dst = encoding.AppendCU64Standalone(dst, a.Times.End-a.Times.Start-1)
+	}
+	return dst
+}
+
+// DecodeArea reads an area encoded per EncodeArea
+// (https://willowprotocol.org/specs/encodings/index.html#EncodeArea) from src.
+// subspaceWidth is the byte length of subspace ids, which the encoding does
+// not carry (willow25.SubspaceIDWidth for Willow'25). Like the other decoders
+// it accepts non-minimal integer encodings. Returns the decoded area and the
+// number of bytes consumed.
+func DecodeArea(limits Limits, subspaceWidth int, src []byte) (Area, int, error) {
+	if len(src) < 1 {
+		return Area{}, 0, fmt.Errorf("area: %w", encoding.ErrShortBuffer)
+	}
+	header := src[0]
+	pos := 1
+
+	var sub *[]byte
+	if header&0b1000_0000 == 0 {
+		if pos+subspaceWidth > len(src) {
+			return Area{}, 0, fmt.Errorf("area subspace: %w", encoding.ErrShortBuffer)
+		}
+		owned := make([]byte, subspaceWidth)
+		copy(owned, src[pos:pos+subspaceWidth])
+		sub = &owned
+		pos += subspaceWidth
+	}
+
+	path, n, err := Decode(limits, src[pos:])
+	if err != nil {
+		return Area{}, 0, fmt.Errorf("area path: %w", err)
+	}
+	pos += n
+
+	start, n, err := encoding.DecodeCU64(encoding.ExtractTag(header, 6, 2), 6, src[pos:], false)
+	if err != nil {
+		return Area{}, 0, fmt.Errorf("area start: %w", err)
+	}
+	pos += n
+
+	times := NewTimeRangeOpen(start)
+	if header&0b0100_0000 == 0 {
+		gap, n, err := encoding.DecodeCU64Standalone(src[pos:], false)
+		if err != nil {
+			return Area{}, 0, fmt.Errorf("area end: %w", err)
+		}
+		pos += n
+		// The end is start + 1 + gap. If that overflows, the wrapped end is
+		// at most start, so the range is empty and rejected below.
+		if times, err = NewTimeRangeClosed(start, start+1+gap); err != nil {
+			return Area{}, 0, fmt.Errorf("area times: %w", err)
+		}
+	}
+	return Area{Subspace: sub, PathPrefix: path, Times: times}, pos, nil
+}
+
 // EncodeRelativeTo returns the byte-encoding of a relative to rel per the
 // Willow spec encode_area_in_area
 // (https://willowprotocol.org/specs/encodings/index.html#encode_area_in_area).
