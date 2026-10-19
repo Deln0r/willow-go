@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Deln0r/willow-go/datamodel"
 	"github.com/Deln0r/willow-go/willow25"
 )
 
@@ -106,6 +107,58 @@ func TestEntryDecode(t *testing.T) {
 	}
 }
 
+func TestAreaDecode(t *testing.T) {
+	sub := bytes.Repeat([]byte{0x33}, willow25.SubspaceIDWidth)
+	prefix, err := willow25.NewPath([][]byte{[]byte("chat")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	times, err := datamodel.NewTimeRangeClosed(100, 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name string
+		area datamodel.Area
+		want []string
+	}{
+		{
+			name: "one subspace, closed times",
+			area: datamodel.Area{Subspace: &sub, PathPrefix: prefix, Times: times},
+			want: []string{"subspace: " + strings.Repeat("33", 32), "prefix of 1 components", `"chat"`, "times:    [100, 200)"},
+		},
+		{
+			name: "full area",
+			area: datamodel.FullArea(willow25.Limits()),
+			want: []string{"subspace: any", "prefix of 0 components", "times:    [0, open)"},
+		},
+	}
+	for _, c := range cases {
+		encHex := hex.EncodeToString(c.area.Encode())
+		code, out, errs := runCLI("area", "decode", encHex)
+		if code != 0 {
+			t.Fatalf("%s: exit %d, stderr=%q", c.name, code, errs)
+		}
+		for _, want := range append(c.want, "consumed: ") {
+			if !strings.Contains(out, want) {
+				t.Errorf("%s: output missing %q:\n%s", c.name, want, out)
+			}
+		}
+		if strings.Contains(out, "warning") {
+			t.Errorf("%s: unexpected warning:\n%s", c.name, out)
+		}
+	}
+
+	// Trailing bytes are reported, a truncated subspace id is an error.
+	full := hex.EncodeToString(datamodel.FullArea(willow25.Limits()).Encode())
+	if code, out, _ := runCLI("area", "decode", full+"00ff"); code != 0 || !strings.Contains(out, "2 trailing byte(s)") {
+		t.Errorf("trailing bytes: exit %d, output:\n%s", code, out)
+	}
+	if code, _, errs := runCLI("area", "decode", "3f3333"); code != 1 || !strings.Contains(errs, "decode area") {
+		t.Errorf("truncated subspace id: exit %d, stderr %q", code, errs)
+	}
+}
+
 func TestDigestFromFile(t *testing.T) {
 	dir := t.TempDir()
 	f := filepath.Join(dir, "payload.bin")
@@ -136,5 +189,8 @@ func TestUsageAndErrors(t *testing.T) {
 	}
 	if code, _, errs := runCLI("path"); code != 1 || !strings.Contains(errs, "encode|decode") {
 		t.Errorf("bare path should exit 1 with subcommand hint, got code %d err %q", code, errs)
+	}
+	if code, _, errs := runCLI("area"); code != 1 || !strings.Contains(errs, "'decode'") {
+		t.Errorf("bare area should exit 1 with subcommand hint, got code %d err %q", code, errs)
 	}
 }

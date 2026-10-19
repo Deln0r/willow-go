@@ -21,6 +21,7 @@
 - Property-based round-trip tests for CompactU64 via `testing/quick`, covering every tag width 2..8 (packed) and the standalone framing.
 - Three new absolute-path byte-compat fixtures (251-byte inline boundary, high-byte components, five-component depth), regenerated from willow_rs via the Rust harness. Smoketest corpus is now 54 cases.
 - `doc.go` package overviews for `encoding`, `datamodel`, `meadowcap`, `willow25`, and `mobile`, moved out of the individual source files so each package has exactly one package comment.
+- `willow-cli area decode`: prints the subspace, path prefix and time range of an absolute Area encoding, and reports trailing bytes, like `entry decode`.
 - `willow-cli` unit tests and README usage section. Hex arguments now tolerate a leading `0x` and internal whitespace, odd-length hex gives a specific error, and decode reports trailing bytes that are not part of the encoding.
 - Upstream test vector runners for entries (EncodeEntry, encode_entry), relative paths (EncodePathExtendsPath, path_extends_path, EncodePathRelativePath, path_rel_path), areas (EncodeArea, encode_area, EncodeAreaInArea, encode_area_in_area), and the entry and path predicates and operators (newer-than, prunes, prefix relations, ordering, longest common prefix, greater-but-not-prefixed, successor, predecessor), and the groupings sets over areas (inclusion of entries and areas, intersection, subspace area, full area). 3,488 upstream vectors are exercised, up from 176.
 - `Path.Successor` and `Path.Predecessor`: the least path above and the greatest path below a given path within its limits, ported from willow_rs. Checked against the upstream path_successor and path_predecessor vectors and, for five small sets of limits, against every path in `Compare` order. Closes the matching `TECH_DEBT.md` item.
@@ -44,7 +45,7 @@
 - Stale commit references and cross-references in `TECH_DEBT.md` now point at commits that exist in the public history.
 - staticcheck S1038 cleanup in `datamodel/upstream_vectors_test.go` (`t.Logf` instead of `t.Log(fmt.Sprintf(...))`) and the now-unused `fmt` import dropped.
 - Stale package documentation: `meadowcap` claimed communal capabilities only with "no delegation chains" and that Area relative encoding was unimplemented (both have shipped since), and `willow25` described the payload digest as BLAKE3 when it is WILLIAM3 (BLAKE3's compression with a substituted IV, and the blake3 dependency is long gone).
-- README test counts refreshed after the CLI, property, fuzz, and example tests landed, and again as tests were added since: 95 test functions across 6 packages (246 runs including subtests).
+- README test counts refreshed after the CLI, property, fuzz, and example tests landed, and again as tests were added since: 96 test functions across 6 packages (247 runs including subtests).
 
 ### Documentation
 - Noted in `TECH_DEBT.md` that willow_rs 0.7.0 removed the `willow_data_model` and `meadowcap` crates the fixture harness pins. The harness pins a commit SHA and still builds, so nothing changes today, but the regeneration path is frozen until the harness is replaced by a Go generator.

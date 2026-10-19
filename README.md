@@ -45,7 +45,7 @@ Pre-MVP. The data-model layer, the Meadowcap capability layer (including multi-s
 | Confidential Sync (set reconciliation) | Phase 2 | — | — |
 | Transport encryption | Phase 2 | — | — |
 
-54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 3,488 vectors from the official upstream `willow_test_vectors` corpus pass: 2,492 codec vectors (1,018 that must decode, 1,474 attacker-supplied ones that must be rejected) for path, entry and area encodings, 754 data-model predicate and operator vectors, and 242 grouping vectors over areas. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 95 test functions (246 runs including subtests) across the 6 packages with test files.
+54 fixtures from the upstream Rust harness pass byte-identical encode + lossless decode round-trip (the smoketest output below is the authoritative count). Our handover bytes verify the signatures of 4 Meadowcap delegation chains built by willow_rs. 3,488 vectors from the official upstream `willow_test_vectors` corpus pass: 2,492 codec vectors (1,018 that must decode, 1,474 attacker-supplied ones that must be rejected) for path, entry and area encodings, 754 data-model predicate and operator vectors, and 242 grouping vectors over areas. The negative vectors have found two decoder bugs so far, a panic on a huge component length and relative areas decoded outside their reference area, both fixed. 96 test functions (247 runs including subtests) across the 6 packages with test files.
 
 ## Goals
 
@@ -237,6 +237,13 @@ consumed:     20 of 20 bytes
   [0] 6e6f746573 "notes"
   [1] 6772656574696e672e747874 "greeting.txt"
 
+$ go run ./cmd/willow-cli area decode bc41636861746463
+subspace: any
+path:     prefix of 1 components, 4 bytes
+  [0] 63686174 "chat"
+times:    [100, 200)
+consumed: 8 of 8 bytes
+
 $ printf 'hello, willow' | go run ./cmd/willow-cli digest
 79ae22083788320af5801eaab3becf3b8c044d0d5523f93e1f3150aee4481017
 ```
@@ -278,7 +285,7 @@ willow-go/
 ├── willow25/          Concrete 4096/4096/4096 + WILLIAM3 bundle
 ├── mobile/            gomobile-bindable wrappers
 ├── cmd/
-│   ├── willow-cli/          Read-only encode/decode/digest inspector
+│   ├── willow-cli/          Read-only encode/decode/digest inspector (paths, entries, areas)
 │   ├── willow-smoketest/    Cross-impl byte-compat gate
 │   └── willow-sync-demo/    Pipe-based P2P sync demonstration
 └── testdata/

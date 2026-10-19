@@ -15,6 +15,7 @@
 //	path encode [-hex] <component>...   canonical Path encoding, as hex
 //	path decode <hex>                   decode a Path encoding
 //	entry decode <hex>                  decode an Entry encoding
+//	area decode <hex>                   decode an absolute Area encoding
 //	digest [file]                       WILLIAM3 digest of a file (or stdin)
 //
 // Hex arguments tolerate a leading 0x and internal whitespace, so a hex dump
@@ -56,6 +57,8 @@ func run(args []string, out, errw io.Writer) int {
 		err = runPath(args[1:], out)
 	case "entry":
 		err = runEntry(args[1:], out)
+	case "area":
+		err = runArea(args[1:], out)
 	case "digest":
 		err = runDigest(args[1:], out)
 	case "-h", "--help", "help":
@@ -80,6 +83,7 @@ usage:
   willow-cli path encode [-hex] <component>...   canonical Path encoding, as hex
   willow-cli path decode <hex>                   decode a Path encoding
   willow-cli entry decode <hex>                  decode an Entry encoding
+  willow-cli area decode <hex>                   decode an absolute Area encoding
   willow-cli digest [file]                       WILLIAM3 digest of a file (stdin if omitted)
 
 notes:
@@ -182,6 +186,43 @@ func runEntry(args []string, out io.Writer) error {
 	fmt.Fprintf(out, "consumed:       %d of %d bytes\n", n, len(src))
 	if n != len(src) {
 		fmt.Fprintf(out, "warning:        %d trailing byte(s) not part of the entry\n", len(src)-n)
+	}
+	return nil
+}
+
+func runArea(args []string, out io.Writer) error {
+	if len(args) < 1 || args[0] != "decode" {
+		return fmt.Errorf("area: need subcommand 'decode'")
+	}
+	rest := args[1:]
+	if len(rest) != 1 {
+		return fmt.Errorf("area decode: want exactly one hex argument")
+	}
+	src, err := decodeHex(rest[0])
+	if err != nil {
+		return err
+	}
+	a, n, err := datamodel.DecodeArea(willow25.Limits(), willow25.SubspaceIDWidth, src)
+	if err != nil {
+		return fmt.Errorf("decode area: %w", err)
+	}
+	if a.Subspace == nil {
+		fmt.Fprintf(out, "subspace: any\n")
+	} else {
+		fmt.Fprintf(out, "subspace: %s\n", hex.EncodeToString(*a.Subspace))
+	}
+	fmt.Fprintf(out, "path:     prefix of %d components, %d bytes\n", a.PathPrefix.ComponentCount(), a.PathPrefix.TotalLength())
+	for i, c := range a.PathPrefix.Components() {
+		fmt.Fprintf(out, "  [%d] %s %s\n", i, hex.EncodeToString(c), printable(c))
+	}
+	if a.Times.Open {
+		fmt.Fprintf(out, "times:    [%d, open)\n", a.Times.Start)
+	} else {
+		fmt.Fprintf(out, "times:    [%d, %d)\n", a.Times.Start, a.Times.End)
+	}
+	fmt.Fprintf(out, "consumed: %d of %d bytes\n", n, len(src))
+	if n != len(src) {
+		fmt.Fprintf(out, "warning:  %d trailing byte(s) not part of the area\n", len(src)-n)
 	}
 	return nil
 }
