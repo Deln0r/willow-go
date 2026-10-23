@@ -32,7 +32,8 @@ type Path struct {
 	limits     Limits
 }
 
-// EmptyPath returns a zero-component Path with the given limits.
+// EmptyPath returns a zero-component Path with the given limits. It is the
+// least of all paths; GreatestPath is the greatest.
 func EmptyPath(limits Limits) Path {
 	return Path{limits: limits}
 }
@@ -282,13 +283,38 @@ func (p Path) Predecessor() (Path, bool) {
 	}
 	newComps = append(newComps, decremented)
 	total += len(decremented)
+	return Path{components: appendMaximalComponents(newComps, total, p.limits), limits: p.limits}, true
+}
 
-	for len(newComps) < p.limits.MaxComponentCount {
-		fill := min(p.limits.MaxComponentLength, p.limits.MaxPathLength-total)
-		newComps = append(newComps, bytes.Repeat([]byte{0xFF}, fill))
+// appendMaximalComponents appends components of 0xFF bytes, each as long as
+// the limits allow, until there are MaxComponentCount components. total is
+// the byte length of comps. Once the path length is used up the remaining
+// components are empty. The result is the greatest path that extends comps.
+func appendMaximalComponents(comps [][]byte, total int, limits Limits) [][]byte {
+	for len(comps) < limits.MaxComponentCount {
+		fill := min(limits.MaxComponentLength, limits.MaxPathLength-total)
+		comps = append(comps, bytes.Repeat([]byte{0xFF}, fill))
 		total += fill
 	}
-	return Path{components: newComps, limits: p.limits}, true
+	return comps
+}
+
+// GreatestPath returns the greatest Path (in the order of Compare) that fits
+// within limits: MaxComponentCount components of 0xFF bytes, each as long as
+// the limits allow. EmptyPath is the least.
+func GreatestPath(limits Limits) Path {
+	return Path{components: appendMaximalComponents(nil, 0, limits), limits: limits}
+}
+
+// Append returns the path made of p's components followed by suffix's
+// components, checked against p's limits: ErrTooManyComponents,
+// ErrComponentTooLong or ErrPathTooLong if the result does not fit. The
+// components are copied.
+func (p Path) Append(suffix Path) (Path, error) {
+	comps := make([][]byte, 0, len(p.components)+len(suffix.components))
+	comps = append(comps, p.components...)
+	comps = append(comps, suffix.components...)
+	return FromSlices(p.limits, comps)
 }
 
 // Compare returns -1, 0, or +1 comparing p to other lexicographically by

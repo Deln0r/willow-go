@@ -383,6 +383,51 @@ func TestUpstream_PathPartialOperators(t *testing.T) {
 	}
 }
 
+func TestUpstream_path_append_path(t *testing.T) {
+	requireCorpus(t)
+	dir := upstreamDir("data_model", "path_append_path")
+	var pass, fail int
+	for _, kind := range []string{"some", "none"} {
+		for _, n := range listVectors(t, filepath.Join(dir, kind, "input")) {
+			src := readVector(t, filepath.Join(dir, kind, "input", n))
+			a, used, err := decodePathArg(src)
+			if err != nil {
+				t.Fatalf("%s/%s: first path: %v", kind, n, err)
+			}
+			got, err := a.Append(mustDecodePathVector(t, src[used:]))
+			if kind == "none" {
+				if err == nil {
+					t.Errorf("none/%s: got %x, want no output", n, got.Encode())
+					fail++
+					continue
+				}
+			} else if want := readVector(t, filepath.Join(dir, kind, "output", n)); err != nil || !bytes.Equal(got.Encode(), want) {
+				t.Errorf("some/%s: got %x (err %v), want %x", n, got.Encode(), err, want)
+				fail++
+				continue
+			}
+			pass++
+		}
+	}
+	t.Logf("path_append_path: %d/%d pass", pass, pass+fail)
+}
+
+func TestUpstream_PathConstants(t *testing.T) {
+	requireCorpus(t)
+	for _, c := range []struct {
+		name string
+		path Path
+	}{
+		{"path_least", EmptyPath(willow25Limits())},
+		{"path_greatest", GreatestPath(willow25Limits())},
+	} {
+		want := readVector(t, upstreamDir("data_model", c.name, "value"))
+		if got := c.path.Encode(); !bytes.Equal(got, want) {
+			t.Errorf("%s: got %d bytes %x, want %d bytes %x", c.name, len(got), got, len(want), want)
+		}
+	}
+}
+
 // decodeAreaPrefix decodes the encode_area argument at the start of src and
 // returns it with the number of bytes it took.
 func decodeAreaPrefix(t *testing.T, src []byte) (Area, int) {
@@ -492,7 +537,8 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 		"data_model/path_is_related_to": true, "data_model/path_is_less_than_or_equal_to": true,
 		"data_model/path_longest_common_prefix":                                             true,
 		"data_model/path_least_path_lexicographically_greater_but_not_prefixed_by_original": true,
-		"data_model/path_successor":                                                         true, "data_model/path_predecessor": true,
+		"data_model/path_append_path":                                                       true, "data_model/path_least": true, "data_model/path_greatest": true,
+		"data_model/path_successor": true, "data_model/path_predecessor": true,
 	}
 
 	countFiles := func(parts ...string) int {

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -348,8 +349,9 @@ func allPaths(t *testing.T, limits Limits) []Path {
 
 // TestPath_SuccessorPredecessor_Exhaustive sorts every path within small
 // limits and checks that each path's successor and predecessor are exactly
-// its neighbours, and that the least and greatest paths have none. Each set
-// of limits makes a different bound the binding one.
+// its neighbours, that the least and greatest paths have none, and that
+// those two are EmptyPath and GreatestPath. Each set of limits makes a
+// different bound the binding one.
 func TestPath_SuccessorPredecessor_Exhaustive(t *testing.T) {
 	t.Parallel()
 	for _, limits := range []Limits{
@@ -361,6 +363,12 @@ func TestPath_SuccessorPredecessor_Exhaustive(t *testing.T) {
 	} {
 		paths := allPaths(t, limits)
 		sort.Slice(paths, func(i, j int) bool { return paths[i].Compare(paths[j]) < 0 })
+		if !paths[0].Equal(EmptyPath(limits)) {
+			t.Errorf("%+v: least path is %x, not the empty path", limits, componentDump(paths[0]))
+		}
+		if greatest := GreatestPath(limits); !paths[len(paths)-1].Equal(greatest) {
+			t.Errorf("%+v: greatest path is %x, GreatestPath gives %x", limits, componentDump(paths[len(paths)-1]), componentDump(greatest))
+		}
 
 		var mismatches int
 		for i, p := range paths {
@@ -382,5 +390,44 @@ func TestPath_SuccessorPredecessor_Exhaustive(t *testing.T) {
 		if mismatches > 0 {
 			t.Errorf("%+v: %d mismatches over %d paths", limits, mismatches, len(paths))
 		}
+	}
+}
+
+func TestPath_Append(t *testing.T) {
+	t.Parallel()
+	limits := Limits{MaxComponentLength: 3, MaxComponentCount: 3, MaxPathLength: 5}
+	loose := Limits{MaxComponentLength: 8, MaxComponentCount: 8, MaxPathLength: 16}
+	ab := mustPath(t, limits, [][]byte{[]byte("a"), []byte("b")})
+
+	got, err := ab.Append(mustPath(t, limits, [][]byte{[]byte("cde")}))
+	if err != nil || !got.Equal(mustPath(t, limits, [][]byte{[]byte("a"), []byte("b"), []byte("cde")})) {
+		t.Errorf("a/b + cde: got %x, err %v", componentDump(got), err)
+	}
+	if got, err := ab.Append(EmptyPath(limits)); err != nil || !got.Equal(ab) {
+		t.Errorf("a/b + empty path: got %x, err %v", componentDump(got), err)
+	}
+
+	// The result is checked against the receiver's limits, also when the
+	// suffix was built under looser ones.
+	for _, c := range []struct {
+		name   string
+		prefix Path
+		suffix Path
+		want   error
+	}{
+		{"component count", ab, mustPath(t, limits, [][]byte{{}, {}}), ErrTooManyComponents},
+		{"component length", ab, mustPath(t, loose, [][]byte{[]byte("cdef")}), ErrComponentTooLong},
+		{"path length", mustPath(t, limits, [][]byte{[]byte("ab"), []byte("c")}), mustPath(t, limits, [][]byte{[]byte("def")}), ErrPathTooLong},
+	} {
+		if got, err := c.prefix.Append(c.suffix); !errors.Is(err, c.want) {
+			t.Errorf("%s: got %x, err %v, want %v", c.name, componentDump(got), err, c.want)
+		}
+	}
+
+	// The result does not share memory with the inputs.
+	got, _ = ab.Append(EmptyPath(limits))
+	got.Component(0)[0] = 'z'
+	if ab.Component(0)[0] != 'a' {
+		t.Error("Append result shares component memory with the receiver")
 	}
 }
