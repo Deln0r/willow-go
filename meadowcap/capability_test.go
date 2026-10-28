@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Deln0r/willow-go/datamodel"
+	"github.com/Deln0r/willow-go/willow25"
 )
 
 var testLimits = datamodel.Limits{MaxComponentLength: 64, MaxComponentCount: 16, MaxPathLength: 256}
@@ -97,6 +98,11 @@ func TestIsCommunal(t *testing.T) {
 	}
 	if IsCommunal(make([]byte, ed25519.PublicKeySize-1)) {
 		t.Error("a short key should not be communal")
+	}
+	// willow_rs builds its default authorisation token from a communal
+	// capability in the default namespace.
+	if ns := willow25.DefaultNamespaceID(); !IsCommunal(ns[:]) {
+		t.Error("the Willow'25 default namespace should be communal")
 	}
 }
 

@@ -315,6 +315,29 @@ func TestUpstream_Predicates(t *testing.T) {
 	t.Run("path_is_less_than_or_equal_to", func(t *testing.T) {
 		runPredicateVectors(t, "path_is_less_than_or_equal_to", 2, decodePathArg, func(p []Path) bool { return p[0].Compare(p[1]) <= 0 })
 	})
+	// The library has no standalone id comparison: subspace ids are ordered
+	// by SubspaceRange and payload digests by the entry tie-break, so the
+	// vectors go through those.
+	t.Run("subspace_id_is_less_than_or_equal_to", func(t *testing.T) {
+		runPredicateVectors(t, "subspace_id_is_less_than_or_equal_to", 2, decodeFixed32Arg, func(s [][]byte) bool {
+			return NewSubspaceRangeOpen(s[0]).IncludesValue(s[1])
+		})
+	})
+	t.Run("payload_digest_is_less_than_or_equal_to", func(t *testing.T) {
+		runPredicateVectors(t, "payload_digest_is_less_than_or_equal_to", 2, decodeFixed32Arg, func(d [][]byte) bool {
+			withDigest := func(digest []byte) Entry { return Entry{Timestamp: 7, PayloadLength: 3, PayloadDigest: digest} }
+			return !withDigest(d[0]).IsNewerThan(withDigest(d[1]))
+		})
+	})
+}
+
+// decodeFixed32Arg decodes a Willow'25 subspace id or payload digest, which
+// are encoded as their 32 raw bytes.
+func decodeFixed32Arg(src []byte) ([]byte, int, error) {
+	if len(src) < 32 {
+		return nil, 0, fmt.Errorf("need 32 bytes, have %d", len(src))
+	}
+	return src[:32], 32, nil
 }
 
 func TestUpstream_path_longest_common_prefix(t *testing.T) {
@@ -539,6 +562,11 @@ func TestUpstream_CoverageSummary(t *testing.T) {
 		"data_model/path_least_path_lexicographically_greater_but_not_prefixed_by_original": true,
 		"data_model/path_append_path":                                                       true, "data_model/path_least": true, "data_model/path_greatest": true,
 		"data_model/path_successor": true, "data_model/path_predecessor": true,
+		"data_model/subspace_id_is_less_than_or_equal_to":    true,
+		"data_model/payload_digest_is_less_than_or_equal_to": true,
+		// Run by willow25.TestUpstream_Defaults.
+		"data_model/namespace_id_default": true, "data_model/subspace_id_default": true,
+		"data_model/payload_digest_default": true,
 	}
 
 	countFiles := func(parts ...string) int {

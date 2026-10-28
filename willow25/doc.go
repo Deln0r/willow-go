@@ -6,8 +6,9 @@
 //
 // It fixes the path limits to 4096 bytes per component, 4096 components per
 // path, and 4096 total path bytes; pins NamespaceID and SubspaceID to 32-byte
-// Ed25519 public keys; pins PayloadDigest to the 32-byte WILLIAM3 hash; and
-// provides convenience constructors that bundle those choices together.
+// Ed25519 public keys; pins PayloadDigest to the 32-byte WILLIAM3 hash; provides the default
+// namespace and subspace ids; and provides convenience constructors that
+// bundle those choices together.
 //
 // WILLIAM3 is the BLAKE3 compression function with a substituted IV, so it is
 // domain-separated from vanilla BLAKE3 and yields different digests for the
