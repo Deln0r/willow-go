@@ -2,12 +2,12 @@
 
 ## Supported Versions
 
-willow-go is pre-MVP (v0.1.0). Security fixes are applied to the latest tagged release on `main`. Older minor versions are not patched.
+willow-go is pre-MVP (v0.2.0). Security fixes are applied to the latest tagged release on `main`. Older minor versions are not patched.
 
 | Version | Supported |
 | ------- | --------- |
-| 0.1.x   | yes       |
-| < 0.1   | no        |
+| 0.2.x   | yes       |
+| < 0.2   | no        |
 
 ## Reporting a Vulnerability
 

@@ -1,4 +1,6 @@
-## Unreleased
+## v0.2.0 - 2026-11-03
+
+Second tagged release, still pre-MVP. It fixes two validity bugs found by the upstream test vectors and a WILLIAM3 mismatch, moves the upstream vector corpus to Codeberg (3,592 vectors exercised, up from 176), and adds path, area and default-value APIs plus a read-only CLI inspector. `NewCommunal` now refuses owned namespace keys, and WILLIAM3 digests change for empty input and for inputs that are not a multiple of 64 bytes.
 
 ### Added
 - REUSE 3.3 compliance: SPDX headers on every Go source file, a `REUSE.toml` covering data / config / docs, `LICENSES/MIT.txt`, and a `reuse lint` CI job. The vendored `william3vectors.txt` is attributed to its upstream (worm-blossom) rather than to this project.

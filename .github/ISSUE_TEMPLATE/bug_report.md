@@ -10,7 +10,7 @@ assignees: ''
 
 ## Version
 
-<!-- Commit SHA or release tag (e.g. v0.1.0). -->
+<!-- Commit SHA or release tag (e.g. v0.2.0). -->
 
 ## What happened
 
